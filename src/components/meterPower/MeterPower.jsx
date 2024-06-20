@@ -122,7 +122,7 @@ const MeterPower = () => {
             })}
           </Select>
         </Col>
-        <Col span="4">
+        {/* <Col span="4">
           <Select
             showSearch
             placeholder="Select a month"
@@ -144,18 +144,9 @@ const MeterPower = () => {
             <Option value="10">10</Option>
             <Option value="11">11</Option>
             <Option value="12">12</Option>
-            {/* {listMonth.map((item) => {
-              if (item < 10) {
-                var month_data = '0' + item;
-              } else month_data = item;
-              return (
-                <Option key={item} value={item}>
-                  {month_data}
-                </Option>
-              );
-            })} */}
+            
           </Select>
-        </Col>
+        </Col> */}
 
         <Col span="4">
           <Select

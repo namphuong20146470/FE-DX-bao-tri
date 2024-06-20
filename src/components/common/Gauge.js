@@ -1,7 +1,7 @@
 import React from 'react';
 import GaugeChart from 'react-gauge-chart';
 
-const Gauge = ({ title, value, maxValue }) => {
+const Gauge = ({ title, value, aqi_value, maxValue }) => {
   // Tính toán phần trăm để sử dụng trong GaugeChart
   const percent = value / maxValue;
 
@@ -12,12 +12,14 @@ const Gauge = ({ title, value, maxValue }) => {
         id={`gauge-chart-${title}`}
         nrOfLevels={20}
         percent={percent}
+        hideText="true"
         textColor="#000000"
         needleColor="#345243"
         colors={["#00FF00", "#FF0000"]}
         cornerRadius={9}
       />
-      <p style={{ marginTop: '10px',color: '#000'}}>Value: {value}</p>
+      <p style={{ marginTop: '10px',color: '#000'}}>AQI: {(aqi_value / 1).toFixed(0)}</p>
+      <p style={{ color: '#000'}}>Value: {(value / 1).toFixed(1)} µg/m³</p>
     </div>
   );
 };

@@ -90,7 +90,7 @@ function Profile(props) {
               </IconButton>
             }
             title={user.fullName}
-            subheader="My house"
+            subheader="My monitoring"
           />
           <CardMedia className={classes.media} image={imgProfile} title="Paella dish" />
           <CardContent>

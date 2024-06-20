@@ -1,22 +1,22 @@
 export const rooms = [
   {
     id: '62616bb00aa850983c21b11b',
-    name: 'Living room',
-    image: 'LivingRoom',
+    name: 'Tòa Trung Tâm',
+    image: 'ToaTrungTam',
   },
   {
     id: '62616bcfadb8c6e0f01e49dc',
-    name: 'Bed room',
-    image: 'BedRoom',
+    name: 'Sân Vận Động',
+    image: 'Sanbong',
   },
   {
     id: '62618a2af73fe211513926c8',
-    name: 'Kitchen room',
-    image: 'KitchenRoom',
+    name: 'Khu D',
+    image: 'KhuD',
   },
   {
     id: '62a9dc30092f09dc52362d94',
-    name: 'Study room',
-    image: 'StudyRoom',
+    name: 'Khu E',
+    image: 'KhuE',
   },
 ];

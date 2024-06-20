@@ -66,13 +66,13 @@ function LayoutApp(props) {
             <NavLink to="/">Home</NavLink>
           </Menu.Item>
           <Menu.Item key="/rooms" icon={<FileOutlined />}>
-            <NavLink to="/rooms">Rooms</NavLink>
+            <NavLink to="/locations">Locations</NavLink>
           </Menu.Item>
           <Menu.Item key="/devices" icon={<DesktopOutlined />}>
-            <NavLink to="/devices">Devices</NavLink>
+            <NavLink to="/maps">Maps</NavLink>
           </Menu.Item>
           <Menu.Item key="/meter_powers" icon={<FlashAuto />}>
-            <NavLink to="/meter-power">Power Consumption</NavLink>
+            <NavLink to="/statistic">Statistics</NavLink>
           </Menu.Item>
           <Menu.Item key="/profile" icon={<UserOutlined />}>
             <NavLink to="/profile">Profile</NavLink>
@@ -120,7 +120,7 @@ function LayoutApp(props) {
           </div>
         </Content>
         <Footer style={{ textAlign: 'center' }}>
-          <h3>Smart Home</h3>
+          <h3>Air Monitoring</h3>
         </Footer>
       </Layout>
     </Layout>

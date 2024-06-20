@@ -11,13 +11,7 @@ const WeatherDashboard = () => {
   useEffect(() => {
     const fetchWeatherData = async () => {
       try {
-        const response = await axios.get('http://api.weatherapi.com/v1/current.json', {
-          params: {
-            key: '8c60834758724c91bf424354241606', // Thay YOUR_API_KEY bằng API key của bạn
-            q: 'Ho Chi Minh City', // Thay đổi thành thành phố bạn muốn
-            aqi: 'no' // AQI (Air Quality Index) không cần thiết cho ví dụ này
-          }
-        });
+        const response = await axios.get('http://35.240.181.224:5000/api/weather');
         setWeatherData(response.data);
       } catch (err) {
         setError(err);
@@ -35,10 +29,10 @@ const WeatherDashboard = () => {
   const renderWeatherIcon = (condition) => {
     switch (condition) {
       case 'Sunny':
-        return <WiDaySunny size={50} />;
+        return <WiDaySunny size={50} color='#FFD700'/>;
       case 'Partly cloudy':
-      case 'Cloudy':
-        return <WiCloud size={50} color='silver'/>;
+      case 'Clouds':
+        return <WiCloud size={50} color='#00FFFF'/>;
       case 'Rain':
       case 'Light rain':
       case 'Moderate rain':
@@ -46,36 +40,36 @@ const WeatherDashboard = () => {
         return <WiRain size={50} color='blue'/>;
       case 'Snow':
       case 'Light snow':
-        return <WiSnow size={50} />;
+        return <WiSnow size={50} color='#FFF8DC'/>;
       case 'Fog':
       case 'Overcast':
         return <WiDaySunnyOvercast size={50} color='yellow' />
       case 'Mist':
-        return <WiFog size={50} />;
+        return <WiFog size={50} color='#FFD700'/>;
       default:
         return null;
     }
   };
 
   return (
-    <Grid container justifyContent="center" style={{ marginTop: '20px', marginBottom: '20px' }}>
-      <Card style={{ minWidth: 275 }}>
-        <CardContent style={{borderRadius: '20px'}}>
+    <Grid container justifyContent="center" style={{ marginTop: '20px', marginBottom: '20px', borderRadius: '10px', minHeight: '300px', maxHeight: '400px'}}>
+      <Card style={{ width: '100%', borderRadius: '10px' }}>
+        <CardContent>
           <Typography variant="h5" component="div">
             Weather Dashboard
           </Typography>
           {weatherData && (
-            <div>
-              <Typography variant="h6">{weatherData.location.name}</Typography>
-              {renderWeatherIcon(weatherData.current.condition.text)}
+            <div style={{ display: 'flex', flexDirection: 'column',  }}>
+              <Typography variant="h6">{weatherData.name}</Typography>
+              {renderWeatherIcon(weatherData.weather[0].main)}
               <Typography variant="body2">
-                Temperature: {weatherData.current.temp_c}°C
+                Temperature: {(weatherData.main.temp / 10).toFixed(1)}°C
               </Typography>
               <Typography variant="body2">
-                Humidity: {weatherData.current.humidity}%
+                Humidity: {weatherData.main.humidity}%
               </Typography>
               <Typography variant="body2">
-                Condition: {weatherData.current.condition.text}
+                Condition: {weatherData.weather[0].description}
               </Typography>
             </div>
           )}

@@ -26,7 +26,7 @@ function renderRooms(classes, navigate) {
         <Card
           className={classes.root}
           onClick={() => {
-            navigate(`/rooms/${room.id}`);
+            navigate(`/locations/${room.id}`);
           }}
         >
           {/* Phần slide ảnh */}

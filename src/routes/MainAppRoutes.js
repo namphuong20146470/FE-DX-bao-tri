@@ -7,9 +7,9 @@ import Loading from '../components/common/Loading';
 const Home = lazy(() => import('../components/home/Home'));
 const Room = lazy(() => import('../components/room/Rooms'));
 const DetailRoom = lazy(() => import('../components/room/detailRoom/DetailRoom'));
-const Device = lazy(() => import('../components/device/Devices'));
 const Profile = lazy(() => import('../components/profile/Profile'));
-const MeterPower = lazy(() => import('../components/meterPower/MeterPower'));
+const LineChart = lazy(() => import('../components/Chart/LineChart'))
+const Map = lazy(() => import('../components/Map/Map'))
 
 function MainAppRoutes(props) {
   return (
@@ -18,11 +18,12 @@ function MainAppRoutes(props) {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route exact path="/home" element={<Home />} />
-          <Route path="/rooms" element={<Room />}></Route>
-          <Route path="/rooms/:id" element={<DetailRoom />} />
-          <Route path="/devices" element={<Device />} />
+          <Route path="/locations" element={<Room />}></Route>
+          <Route path="/locations/:id" element={<DetailRoom />} />
+          <Route path="/maps" element={<Map />} />
           <Route path="/profile" element={<Profile />} />
-          <Route path="/meter-power" element={<MeterPower />} />
+          <Route path="/statistic" element={<LineChart />} />
+          
         </Routes>
       </Suspense>
     </LayoutApp>
