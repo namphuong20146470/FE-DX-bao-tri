@@ -27,20 +27,20 @@ function DetailRoom(props) {
   const roomId = useParams().id;
   const [dataSenor, setDataSensor] = useState({});
 
+  const fetchData = () => {
+    axios.get(`/api/v1/sensors/${roomId}`).then((res) => {
+      console.log('data sensor : ', res.data.data.latestSensorData);
+      setDataSensor(res.data.data.latestSensorData);
+    });
+  };
   // Update chart độ ẩm nhiệt độ từ sensor
   useEffect(() => {
-    setInterval(() => {
-      axios.get('/api/v1/sensors').then((res) => {
-        console.log('data sensor : ', res.data.data.sensors);
-        setDataSensor(res.data.data.sensors)
-      });
-    }, 5000);
-  }, []);
+    fetchData();
+    const interval = setInterval(fetchData, 5000);
+    // Dọn dẹp interval khi component bị hủy
+    return () => clearInterval(interval);
+  }, [roomId]);
 
-
-  
-
-  // mặc định sẽ gồm 1 AirConditional, 1 door, và nhiều light
   return (
     <div className="detail-room">
   <Row style={{ lineHeight: 2.0 }}>
@@ -48,18 +48,18 @@ function DetailRoom(props) {
     <Col span={12}>
       <Row gutter={[16, 16]} justify="center">
         <Col span={12} md={12}>
-          <Gauge title="SO2" value={parseFloat(dataSenor.so2)} aqi_value={dataSenor.aqi_so2} maxValue={1004} />
+          <Gauge title="SO2" value={parseFloat(dataSenor?.so2)} aqi_value={dataSenor?.aqi_so2} maxValue={1004} />
         </Col>
         <Col span={12} md={12}>
-          <Gauge title="CO" value={parseFloat(dataSenor.CO)} aqi_value={dataSenor.aqi_CO} maxValue={150000} />
+          <Gauge title="CO" value={parseFloat(dataSenor?.CO)} aqi_value={dataSenor?.aqi_CO} maxValue={150000} />
         </Col>
       </Row>
       <Row gutter={[16, 16]} justify="center">
         <Col span={12} md={12}>
-          <Gauge title="NO2" value={parseFloat(dataSenor.no2)} aqi_value={dataSenor.aqi_no2} maxValue={3850} />
+          <Gauge title="NO2" value={parseFloat(dataSenor?.no2)} aqi_value={dataSenor?.aqi_no2} maxValue={3850} />
         </Col>
         <Col span={12} md={12}>
-          <Gauge title="PM2.5" value={parseFloat(dataSenor.pm25)} aqi_value={dataSenor.aqi_pm25} maxValue={500} />
+          <Gauge title="PM2.5" value={parseFloat(dataSenor?.pm25)} aqi_value={dataSenor?.aqi_pm25} maxValue={500} />
         </Col>
       </Row>
     </Col>
@@ -68,17 +68,17 @@ function DetailRoom(props) {
     <Col span={12}>
       <Row gutter={[16, 16]} justify="center" className="tempandhumd">
         <Col span={12} style={{ marginBottom: '20px',marginTop: '15px', color: 'white' }}>
-          <Liquid percent={dataSenor.humidityAir / 100} {...configLiquid} />
+          <Liquid percent={dataSenor?.humidityAir / 100} {...configLiquid} />
         </Col>
         <Col span={12} style={{ marginBottom: '20px',marginTop: '15px',backgroundColor: 'black' }}>
-          {dataSenor.temperature === undefined ? (
+          {dataSenor?.temperature === undefined ? (
             ''
           ) : (
             <Pie
               color="#0041ff"
-              percent={dataSenor.temperature}
+              percent={dataSenor?.temperature}
               subTitle="Temperature"
-              total={dataSenor.temperature + '°C'}
+              total={dataSenor?.temperature + '°C'}
               height={165}
             />
           )}

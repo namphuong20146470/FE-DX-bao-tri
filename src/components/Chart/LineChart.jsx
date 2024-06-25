@@ -11,7 +11,7 @@ const LineChart = () => {
   const [chartData, setChartData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filter, setFilter] = useState('Tòa Trung Tâm');
+  const [filter, setFilter] = useState('62616bb00aa850983c21b11b');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -137,10 +137,10 @@ const LineChart = () => {
             },
           }}
         >
-          <MenuItem value="Tòa Trung Tâm">Tòa Trung Tâm</MenuItem>
-          <MenuItem value="Sân banh">Sân banh</MenuItem>
-          <MenuItem value="Khu D">Khu D</MenuItem>
-          <MenuItem value="Khu E">Khu E</MenuItem>
+          <MenuItem value="62616bb00aa850983c21b11b">Tòa Trung Tâm</MenuItem>
+          <MenuItem value="62616bcfadb8c6e0f01e49dc">Sân Vận Động</MenuItem>
+          <MenuItem value="62618a2af73fe211513926c8">Khu D</MenuItem>
+          <MenuItem value="62a9dc30092f09dc52362d94">Khu E</MenuItem>
         </Select>
       </FormControl>
       {chartData && <Line data={chartData} options={options} />}

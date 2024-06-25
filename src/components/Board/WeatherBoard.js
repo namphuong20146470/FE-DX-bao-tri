@@ -11,7 +11,7 @@ const WeatherDashboard = () => {
   useEffect(() => {
     const fetchWeatherData = async () => {
       try {
-        const response = await axios.get('http://35.240.181.224:5000/api/weather');
+        const response = await axios.get('/api/weather');
         setWeatherData(response.data);
       } catch (err) {
         setError(err);

@@ -11,7 +11,7 @@ const AqiBoard = ({ city }) => {
     useEffect(() => {
         const fetchAqiData = async () => {
             try {
-                const response = await axios.get(`http://35.240.181.224:5000/api/aqi?city=${city}`);
+                const response = await axios.get(`/api/aqi`);
                 setAqiData(response.data.data);
                 setLoading(false);
             } catch (error) {
