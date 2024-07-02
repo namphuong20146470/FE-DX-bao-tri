@@ -10,6 +10,7 @@ const DetailRoom = lazy(() => import('../components/room/detailRoom/DetailRoom')
 const Profile = lazy(() => import('../components/profile/Profile'));
 const LineChart = lazy(() => import('../components/Chart/LineChart'))
 const Map = lazy(() => import('../components/Map/Map'))
+const Explain = lazy(() => import('../components/Explain/Explain'))
 
 function MainAppRoutes(props) {
   return (
@@ -23,6 +24,7 @@ function MainAppRoutes(props) {
           <Route path="/maps" element={<Map />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/statistic" element={<LineChart />} />
+          <Route path="/explain" element={<Explain />} />
           
         </Routes>
       </Suspense>

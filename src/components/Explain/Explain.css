@@ -1,0 +1,52 @@
+.air-quality-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: Arial, sans-serif;
+  }
+  
+  .air-quality-table th,
+  .air-quality-table td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+  }
+  
+  .air-quality-table th {
+    background-color: #4CAF50; /* Dark Green */
+    color: white;
+  }
+  
+  .air-quality-table tbody tr:nth-child(1) {
+    background-color: #a8e6cf; /* Light Green */
+  }
+  
+  .air-quality-table tbody tr:nth-child(2) {
+    background-color: #ffeb3b; /* Yellow */
+  }
+  
+  .air-quality-table tbody tr:nth-child(3) {
+    background-color: #ff8a65; /* Light Red */
+  }
+  
+  .air-quality-table tbody tr:nth-child(4) {
+    background-color: #e57373; /* Red */
+  }
+  
+  .air-quality-table tbody tr:nth-child(5) {
+    background-color: #ba68c8; /* Purple */
+  }
+  
+  .air-quality-table tbody tr:nth-child(6) {
+    background-color: #f44336; /* Dark Red */
+  }
+  
+  .air-quality-table tbody tr:hover {
+    background-color: #ddd;
+  }
+  
+  body {
+    color: #000
+  }
+  .white {
+    color: #fff
+  }

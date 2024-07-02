@@ -77,8 +77,8 @@ function LayoutApp(props) {
           <Menu.Item key="/profile" icon={<UserOutlined />}>
             <NavLink to="/profile">Profile</NavLink>
           </Menu.Item>
-          <Menu.Item key="/test" icon={<SettingOutlined />}>
-            <NavLink to="/test">Test</NavLink>
+          <Menu.Item key="/explain" icon={<SettingOutlined />}>
+            <NavLink to="/explain">Explain</NavLink>
           </Menu.Item>
         </Menu>
       </Sider>
