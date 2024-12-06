@@ -19,8 +19,8 @@ const LineChart = () => {
         const response = await axios.get(`/api/v1/statistic?filter=${filter}`);
         const apiData = response.data.data;
         const pm25Data = apiData.map(item => item.avgPm25);
-        const so2Data = apiData.map(item => item.avgSo2);
-        const coData = apiData.map(item => item.avgCO); 
+        const mq135Data = apiData.map(item => item.avgMq135);
+        // const coData = apiData.map(item => item.avgCO); 
         const temperatureData = apiData.map(item => item.avgTemperature);
         const humidityData = apiData.map(item => item.avgHumidityAir);
 
@@ -43,19 +43,19 @@ const LineChart = () => {
               tension: 0.1,
             },
             {
-              label: 'SO2',
-              data: so2Data,
+              label: 'MQ135',
+              data: mq135Data,
               fill: false,
               borderColor: colors[1],
               tension: 0.1,
             },
-            {
-              label: 'CO',
-              data: coData,
-              fill: false,
-              borderColor: colors[2],
-              tension: 0.1,
-            },
+            // {
+            //   label: 'CO',
+            //   data: coData,
+            //   fill: false,
+            //   borderColor: colors[2],
+            //   tension: 0.1,
+            // },
             {
               label: 'Temperature',
               data: temperatureData,

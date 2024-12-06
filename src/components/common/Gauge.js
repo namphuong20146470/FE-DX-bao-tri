@@ -18,8 +18,8 @@ const Gauge = ({ title, value, aqi_value, maxValue }) => {
         colors={["#00FF00", "#FF0000"]}
         cornerRadius={9}
       />
-      <p style={{ marginTop: '10px',color: '#000'}}>AQI: {(aqi_value / 1).toFixed(0)}</p>
-      <p style={{ color: '#000'}}>Value: {(value / 1).toFixed(1)} µg/m³</p>
+      <p style={{ marginTop: '10px',color: '#000'}}>AQI: {(aqi_value / 1).toFixed(3)}</p>
+      <p style={{ color: '#000'}}>Value: {(value / 1).toFixed(3)} µg/m³</p>
     </div>
   );
 };

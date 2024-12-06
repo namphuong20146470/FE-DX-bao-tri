@@ -56,7 +56,7 @@ function DetailRoom(props) {
       </Row>
       <Row gutter={[16, 16]} justify="center">
         <Col span={12} md={12}>
-          <Gauge title="MQ135" value={parseFloat(dataSenor?.mq135)} aqi_value={dataSenor?.mq135} maxValue={3850} />
+          <Gauge title="MQ135" value={dataSenor?.mq135} aqi_value={dataSenor?.mq135} maxValue={3850} />
         </Col>
         <Col span={12} md={12}>
           <Gauge title="PM2.5" value={dataSenor?.pm25} aqi_value={dataSenor?.aqi_pm25} maxValue={500} />

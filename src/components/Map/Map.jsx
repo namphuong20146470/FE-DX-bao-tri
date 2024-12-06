@@ -52,9 +52,7 @@ const MapComponent = () => {
             <div>
               <h4><b>${name}</b></h4>
               <table>
-                <tr><td>SO2:</td><td>${sensorData[roomId].so2} µg/m³</td></tr>
-                <tr><td>CO:</td><td>${sensorData[roomId].CO} µg/m³</td></tr>
-                <tr><td>NO2:</td><td>${sensorData[roomId].no2} µg/m³</td></tr>
+                <tr><td>MQ135:</td><td>${sensorData[roomId].mq135} µg/m³</td></tr>
                 <tr><td>PM2.5:</td><td>${sensorData[roomId].pm25} µg/m³</td></tr>
                 <tr><td>Humidity:</td><td>${sensorData[roomId].humidityAir}%</td></tr>
                 <tr><td>Temperature:</td><td>${sensorData[roomId].temperature} °C</td></tr>
