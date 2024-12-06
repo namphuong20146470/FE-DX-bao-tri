@@ -30,6 +30,8 @@ const WeatherDashboard = () => {
     switch (condition) {
       case 'Sunny':
         return <WiDaySunny size={50} color='#FFD700'/>;
+      case 'clear sky':
+        return <WiCloud size={50} color='#00FFFF'/>;
       case 'Partly cloudy':
       case 'Clouds':
         return <WiCloud size={50} color='#00FFFF'/>;
@@ -47,7 +49,7 @@ const WeatherDashboard = () => {
       case 'Mist':
         return <WiFog size={50} color='#FFD700'/>;
       default:
-        return null;
+        return <WiCloud size={50} color='#00FFFF'/>;
     }
   };
 
