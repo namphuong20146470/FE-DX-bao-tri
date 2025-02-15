@@ -17,9 +17,9 @@ function Home(props) {
           <Box sx={{ flex: 1 }}>
             <Hero />
           </Box>
-          <Box sx={{ flex: 1 }}>
+          {/* <Box sx={{ flex: 1 }}>
             <Feature />
-          </Box>
+          </Box> */}
     </Box>
   );
 }

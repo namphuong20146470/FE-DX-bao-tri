@@ -11,15 +11,9 @@ function RouteApp() {
   return (
     <Suspense fallback={<Loading />}>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
         <Route
           path="*"
-          element={
-            <PrivateRoute>
-              <MainAppRoutes />
-            </PrivateRoute>
-          }
+          element={<MainAppRoutes />}
         />
       </Routes>
     </Suspense>

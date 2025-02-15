@@ -42,7 +42,7 @@ function LayoutApp(props) {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
-    navigation('/login');
+    navigation('/');
   };
 
   return (
@@ -66,19 +66,19 @@ function LayoutApp(props) {
             <NavLink to="/">Home</NavLink>
           </Menu.Item>
           <Menu.Item key="/rooms" icon={<FileOutlined />}>
-            <NavLink to="/locations">Locations</NavLink>
+            <NavLink to="/locations">Nhật kí bảo trì</NavLink>
           </Menu.Item>
           <Menu.Item key="/devices" icon={<DesktopOutlined />}>
-            <NavLink to="/maps">Maps</NavLink>
+            <NavLink to="/maps">Sửa chữa</NavLink>
           </Menu.Item>
           <Menu.Item key="/meter_powers" icon={<FlashAuto />}>
-            <NavLink to="/statistic">Statistics</NavLink>
+            <NavLink to="/statistic">Bảo trì</NavLink>
           </Menu.Item>
           <Menu.Item key="/profile" icon={<UserOutlined />}>
-            <NavLink to="/profile">Profile</NavLink>
+            <NavLink to="/profile">Bảo hành</NavLink>
           </Menu.Item>
           <Menu.Item key="/explain" icon={<SettingOutlined />}>
-            <NavLink to="/explain">Explain</NavLink>
+            <NavLink to="/explain">Cài đặt</NavLink>
           </Menu.Item>
         </Menu>
       </Sider>

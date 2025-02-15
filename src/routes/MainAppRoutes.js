@@ -12,10 +12,10 @@ const LineChart = lazy(() => import('../components/Chart/LineChart'))
 const Map = lazy(() => import('../components/Map/Map'))
 const Explain = lazy(() => import('../components/Explain/Explain'))
 
-function MainAppRoutes(props) {
+function  MainAppRoutes(props) {
   return (
     <LayoutApp>
-      <Suspense fallback={<Loading />}>
+      {/* <Suspense fallback={<Loading />}> */}
         <Routes>
           <Route path="/" element={<Home />} />
           <Route exact path="/home" element={<Home />} />
@@ -27,7 +27,7 @@ function MainAppRoutes(props) {
           <Route path="/explain" element={<Explain />} />
           
         </Routes>
-      </Suspense>
+      {/* </Suspense> */}
     </LayoutApp>
   );
 }

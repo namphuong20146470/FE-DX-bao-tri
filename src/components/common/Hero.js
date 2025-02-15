@@ -14,12 +14,12 @@ const Hero = () => (
     }}
   >
     <Container maxWidth="md">
-      <FaCloud style={{ fontSize: '100px', color: '#1890ff' }} />
+      {/* <FaCloud style={{ fontSize: '100px', color: '#1890ff' }} /> */}
       <Typography variant="h2" component="h1" gutterBottom>
-        Air Monitoring System
+      Công Ty TNHH Dịch Vụ Và Thương Mại Hoàng Phúc Thanh
       </Typography>
       <Typography variant="h5" component="p">
-        Real-time air quality monitoring for a healthier environment.
+        {/* Real-time air quality monitoring for a healthier environment. */}
       </Typography>
     </Container>
   </Box>
