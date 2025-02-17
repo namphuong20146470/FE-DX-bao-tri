@@ -134,75 +134,81 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 // Update maintenance record
 // Cập nhật bảo trì (update)
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Đọc dữ liệu JSON từ php://input
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['update'])) {
+    // Read JSON data from php://input
     $json = file_get_contents("php://input");
     $data = json_decode($json, true);
     
-    // Kiểm tra JSON
+    // Validate JSON
     if (!$data) {
-        echo json_encode(["success" => false, "message" => "Dữ liệu không hợp lệ"]);
+        echo json_encode(["success" => false, "message" => "Invalid data"]);
         exit();
     }
 
-    // Bắt buộc phải có id_bao_tri
+    // Check for required id_bao_tri
     if (!isset($data['id_bao_tri'])) {
-        echo json_encode(["success" => false, "message" => "Thiếu id_bao_tri"]);
+        echo json_encode(["success" => false, "message" => "Missing id_bao_tri"]);
         exit();
     }
 
     $id_bao_tri = $data['id_bao_tri'];
-    unset($data['id_bao_tri']); // Xóa id_bao_tri để tránh cập nhật nó
+    unset($data['id_bao_tri']); 
 
-    // Nếu không có trường nào để cập nhật
+    // Check if there are fields to update
     if (empty($data)) {
-        echo json_encode(["success" => false, "message" => "Không có trường nào để cập nhật"]);
+        echo json_encode(["success" => false, "message" => "No fields to update"]);
         exit();
     }
 
-    // Danh sách các trường hợp lệ trong cơ sở dữ liệu
-    $allowedFields = ['id_thiet_bi', 'ngay_bao_tri', 'loai_bao_tri', 'chi_phi', 'nhan_vien_phu_trach', 'mo_ta', 'ket_qua'];
+    // First, check if 'them' column exists, if not, add it
+    $checkColumn = $conn->query("SHOW COLUMNS FROM bao_tri LIKE 'them'");
+    if ($checkColumn->num_rows === 0) {
+        $conn->query("ALTER TABLE bao_tri ADD COLUMN them VARCHAR(255)");
+    }
 
-    // Chuẩn bị câu lệnh SQL động
+    // List of allowed fields including 'them'
+    $allowedFields = ['id_thiet_bi', 'ngay_bao_tri', 'loai_bao_tri', 'chi_phi', 
+                     'nhan_vien_phu_trach', 'mo_ta', 'ket_qua', 'them'];
+
+    // Prepare dynamic SQL statement
     $fields = [];
     $values = [];
     $types = "";
 
-    // Loại bỏ các trường không hợp lệ (ví dụ: "them")
     foreach ($data as $key => $value) {
         if (in_array($key, $allowedFields)) {
             $fields[] = "$key = ?";
             $values[] = $value;
-            $types .= "s"; // Kiểu string (s) - chỉnh sửa nếu cần
+            $types .= "s";
         }
     }
 
     if (empty($fields)) {
-        echo json_encode(["success" => false, "message" => "Không có trường hợp lệ"]);
+        echo json_encode(["success" => false, "message" => "No valid fields"]);
         exit();
     }
 
-    // Thêm id_bao_tri vào cuối cùng để bind
+    // Add id_bao_tri for WHERE clause
     $values[] = $id_bao_tri;
     $types .= "s";
 
-    // Tạo câu lệnh SQL cập nhật
+    // Create update SQL statement
     $sql = "UPDATE bao_tri SET " . implode(", ", $fields) . " WHERE id_bao_tri = ?";
     $stmt = $conn->prepare($sql);
 
     if (!$stmt) {
-        echo json_encode(["success" => false, "message" => "Lỗi chuẩn bị câu lệnh: " . $conn->error]);
+        echo json_encode(["success" => false, "message" => "Statement preparation error: " . $conn->error]);
         exit();
     }
 
-    // Gán tham số
+    // Bind parameters
     $stmt->bind_param($types, ...$values);
 
-    // Thực hiện cập nhật
+    // Execute update
     if ($stmt->execute()) {
-        echo json_encode(["success" => true, "message" => "Cập nhật thành công"]);
+        echo json_encode(["success" => true, "message" => "Update successful"]);
     } else {
-        echo json_encode(["success" => false, "message" => "Lỗi khi cập nhật: " . $stmt->error]);
+        echo json_encode(["success" => false, "message" => "Update error: " . $stmt->error]);
     }
 
     $stmt->close();
@@ -229,6 +235,28 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
             "message" => "Error deleting record: " . $stmt->error
         ]);
     }
+    $stmt->close();
+    exit();
+}
+// Add new field to table
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_GET['delete'])) {
+    $data = json_decode(file_get_contents("php://input"), true);
+    
+    if (!isset($data['id_bao_tri'])) {
+        echo json_encode(["success" => false, "message" => "Missing ID"]);
+        exit();
+    }
+
+    $sql = "DELETE FROM bao_tri WHERE id_bao_tri = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("s", $data['id_bao_tri']);
+
+    if ($stmt->execute()) {
+        echo json_encode(["success" => true, "message" => "Record deleted successfully"]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+    }
+    
     $stmt->close();
     exit();
 }

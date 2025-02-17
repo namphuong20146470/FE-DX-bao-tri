@@ -68,6 +68,7 @@ function Home() {
                 <TableCell><strong>Nhân Viên Phụ Trách</strong></TableCell>
                 <TableCell><strong>Mô Tả</strong></TableCell>
                 <TableCell><strong>Kết Quả</strong></TableCell>
+                {/* <TableCell><strong>Thao tác</strong></TableCell> */}
               </TableRow>
             </TableHead>
             <TableBody>
