@@ -102,69 +102,115 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['latest'])) {
 // ...rest of your existing code...
 
 // Add maintenance record
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['add'])) {
-    $stmt = $conn->prepare("INSERT INTO bao_tri (id_thiet_bi, ngay_bao_tri, loai_bao_tri, 
-                           chi_phi, nhan_vien_phu_trach, mo_ta, ket_qua) 
-                           VALUES (?, ?, ?, ?, ?, ?, ?)");
-    
-    $id_thiet_bi = $_POST['id_thiet_bi'];
-    $ngay_bao_tri = $_POST['ngay_bao_tri'];
-    $loai_bao_tri = $_POST['loai_bao_tri'];
-    $chi_phi = $_POST['chi_phi'];
-    $nhan_vien_phu_trach = $_POST['nhan_vien_phu_trach'];
-    $mo_ta = $_POST['mo_ta'];
-    $ket_qua = $_POST['ket_qua'];
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $data = json_decode(file_get_contents("php://input"), true);
+    if (isset($data['add'])) {
+        $stmt = $conn->prepare("INSERT INTO bao_tri 
+            (id_thiet_bi, ngay_bao_tri, loai_bao_tri, chi_phi, 
+            nhan_vien_phu_trach, mo_ta, ket_qua) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)");
 
-    $stmt->bind_param("sssssss", $id_thiet_bi, $ngay_bao_tri, $loai_bao_tri, 
-                      $chi_phi, $nhan_vien_phu_trach, $mo_ta, $ket_qua);
-    
-    if ($stmt->execute()) {
-        echo json_encode([
-            "success" => true,
-            "message" => "Record added successfully"
-        ]);
-    } else {
-        echo json_encode([
-            "success" => false,
-            "message" => "Error adding record: " . $stmt->error
-        ]);
+        $stmt->bind_param("sssssss", 
+            $data['id_thiet_bi'], 
+            $data['ngay_bao_tri'], 
+            $data['loai_bao_tri'], 
+            $data['chi_phi'], 
+            $data['nhan_vien_phu_trach'], 
+            $data['mo_ta'], 
+            $data['ket_qua']
+        );
+
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Record added successfully"]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+        }
+        $stmt->close();
+        exit();
     }
-    $stmt->close();
-    exit();
 }
+
 
 // Update maintenance record
-if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['update'])) {
-    $stmt = $conn->prepare("UPDATE bao_tri SET id_thiet_bi=?, ngay_bao_tri=?, loai_bao_tri=?, 
-                           chi_phi=?, nhan_vien_phu_trach=?, mo_ta=?, ket_qua=? 
-                           WHERE id_bao_tri=?");
-    
-    $id_bao_tri = $_POST['id_bao_tri'];
-    $id_thiet_bi = $_POST['id_thiet_bi'];
-    $ngay_bao_tri = $_POST['ngay_bao_tri'];
-    $loai_bao_tri = $_POST['loai_bao_tri'];
-    $chi_phi = $_POST['chi_phi'];
-    $nhan_vien_phu_trach = $_POST['nhan_vien_phu_trach'];
-    $mo_ta = $_POST['mo_ta'];
-    $ket_qua = $_POST['ket_qua'];
+// Cập nhật bảo trì (update)
 
-    $stmt->bind_param("ssssssss", $id_thiet_bi, $ngay_bao_tri, $loai_bao_tri, 
-                      $chi_phi, $nhan_vien_phu_trach, $mo_ta, $ket_qua, $id_bao_tri);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Đọc dữ liệu JSON từ php://input
+    $json = file_get_contents("php://input");
+    $data = json_decode($json, true);
     
-    if ($stmt->execute()) {
-        echo json_encode([
-            "success" => true,
-            "message" => "Record updated successfully"
-        ]);
-    } else {
-        echo json_encode([
-            "success" => false,
-            "message" => "Error updating record: " . $stmt->error
-        ]);
+    // Kiểm tra JSON
+    if (!$data) {
+        echo json_encode(["success" => false, "message" => "Dữ liệu không hợp lệ"]);
+        exit();
     }
+
+    // Bắt buộc phải có id_bao_tri
+    if (!isset($data['id_bao_tri'])) {
+        echo json_encode(["success" => false, "message" => "Thiếu id_bao_tri"]);
+        exit();
+    }
+
+    $id_bao_tri = $data['id_bao_tri'];
+    unset($data['id_bao_tri']); // Xóa id_bao_tri để tránh cập nhật nó
+
+    // Nếu không có trường nào để cập nhật
+    if (empty($data)) {
+        echo json_encode(["success" => false, "message" => "Không có trường nào để cập nhật"]);
+        exit();
+    }
+
+    // Danh sách các trường hợp lệ trong cơ sở dữ liệu
+    $allowedFields = ['id_thiet_bi', 'ngay_bao_tri', 'loai_bao_tri', 'chi_phi', 'nhan_vien_phu_trach', 'mo_ta', 'ket_qua'];
+
+    // Chuẩn bị câu lệnh SQL động
+    $fields = [];
+    $values = [];
+    $types = "";
+
+    // Loại bỏ các trường không hợp lệ (ví dụ: "them")
+    foreach ($data as $key => $value) {
+        if (in_array($key, $allowedFields)) {
+            $fields[] = "$key = ?";
+            $values[] = $value;
+            $types .= "s"; // Kiểu string (s) - chỉnh sửa nếu cần
+        }
+    }
+
+    if (empty($fields)) {
+        echo json_encode(["success" => false, "message" => "Không có trường hợp lệ"]);
+        exit();
+    }
+
+    // Thêm id_bao_tri vào cuối cùng để bind
+    $values[] = $id_bao_tri;
+    $types .= "s";
+
+    // Tạo câu lệnh SQL cập nhật
+    $sql = "UPDATE bao_tri SET " . implode(", ", $fields) . " WHERE id_bao_tri = ?";
+    $stmt = $conn->prepare($sql);
+
+    if (!$stmt) {
+        echo json_encode(["success" => false, "message" => "Lỗi chuẩn bị câu lệnh: " . $conn->error]);
+        exit();
+    }
+
+    // Gán tham số
+    $stmt->bind_param($types, ...$values);
+
+    // Thực hiện cập nhật
+    if ($stmt->execute()) {
+        echo json_encode(["success" => true, "message" => "Cập nhật thành công"]);
+    } else {
+        echo json_encode(["success" => false, "message" => "Lỗi khi cập nhật: " . $stmt->error]);
+    }
+
     $stmt->close();
     exit();
 }
+
+
+
 
 // Delete maintenance record
 if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {

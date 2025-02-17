@@ -120,7 +120,7 @@ function LayoutApp(props) {
           </div>
         </Content>
         <Footer style={{ textAlign: 'center' }}>
-          <h3>Air Monitoring</h3>
+          <h3>Mainternance</h3>
         </Footer>
       </Layout>
     </Layout>
