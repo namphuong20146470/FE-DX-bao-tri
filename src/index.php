@@ -16,6 +16,14 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 $conn->set_charset("utf8");
+function handleDBQuery($conn, $query, $params = [], $types = '') {
+    $stmt = $conn->prepare($query);
+    if ($params) {
+        $stmt->bind_param($types, ...$params);
+    }
+    $stmt->execute();
+    return $stmt->get_result();
+}
 
 // Check if ?id is passed for HTML rendering
 $data = null;
@@ -69,19 +77,6 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
         header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); 
         header("Access-Control-Allow-Headers: Content-Type");
         header("Content-Type: application/json");
-
-        // Confirm DB config once more, matching user snippet
-        define('DB_HOST', 'localhost');
-        define('DB_USER', 'root');
-        define('DB_PASS', 'H&ptiot2024');
-        define('DB_NAME', 'HOPT');
-
-        // Connect again (as per snippet)
-        $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-        if ($conn->connect_error) {
-            die(json_encode(["error" => "Connection failed: " . $conn->connect_error]));
-        }
-        $conn->set_charset("utf8");
 
         // 1) GET by ?id (latest record by device)
         if (isset($_GET['id'])) {
