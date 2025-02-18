@@ -17,7 +17,8 @@ if ($conn->connect_error) {
 }
 $conn->set_charset("utf8");
 
-// Get ID from URL
+// Check if ?id is passed for HTML rendering
+$data = null;
 if (isset($_GET['id'])) {
     $id = $_GET['id'];
     if (!is_numeric($id)) {
@@ -39,18 +40,275 @@ if (isset($_GET['id'])) {
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
         $row['chi_phi'] = number_format((float)$row['chi_phi'], 2, '.', '');
-        $data = $row; // Reuse in HTML
+        $data = $row;
     } else {
         $data = null;
     }
-
     $stmt->close();
-} else {
-    $data = null;
 }
-$conn->close();
-?>
 
+// Check if it's an API request for all_data, latest, or POST
+if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Set JSON headers
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); 
+    header("Access-Control-Allow-Headers: Content-Type");
+    header("Content-Type: application/json");
+
+    // Re-connect here (mirroring user snippet)
+    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+    if ($conn->connect_error) {
+        die(json_encode(["error" => "Connection failed: " . $conn->connect_error]));
+    }
+    $conn->set_charset("utf8");
+
+    // Handle API requests
+    if (isset($_GET['id']) || isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Set JSON headers again (as in user snippet)
+        header("Access-Control-Allow-Origin: *");
+        header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); 
+        header("Access-Control-Allow-Headers: Content-Type");
+        header("Content-Type: application/json");
+
+        // Confirm DB config once more, matching user snippet
+        define('DB_HOST', 'localhost');
+        define('DB_USER', 'root');
+        define('DB_PASS', 'H&ptiot2024');
+        define('DB_NAME', 'HOPT');
+
+        // Connect again (as per snippet)
+        $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
+        if ($conn->connect_error) {
+            die(json_encode(["error" => "Connection failed: " . $conn->connect_error]));
+        }
+        $conn->set_charset("utf8");
+
+        // 1) GET by ?id (latest record by device)
+        if (isset($_GET['id'])) {
+            $id = $_GET['id'];
+            if (!is_numeric($id)) {
+                echo json_encode(["success" => false, "message" => "ID thiết bị không hợp lệ"]);
+                exit();
+            }
+
+            $query = "SELECT id_bao_tri, id_thiet_bi, DATE_FORMAT(ngay_bao_tri, '%Y-%m-%d') AS ngay_bao_tri,
+                             loai_bao_tri, chi_phi, nhan_vien_phu_trach, mo_ta, ket_qua 
+                      FROM bao_tri 
+                      WHERE id_thiet_bi = ?
+                      ORDER BY ngay_bao_tri DESC
+                      LIMIT 1";
+            $stmt = $conn->prepare($query);
+            $stmt->bind_param("s", $id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                $row['chi_phi'] = number_format((float)$row['chi_phi'], 2, '.', '');
+                echo json_encode(["success" => true, "data" => $row], JSON_UNESCAPED_UNICODE);
+            } else {
+                echo json_encode(["success" => false, "message" => "Không tìm thấy dữ liệu bảo trì cho thiết bị này"], JSON_UNESCAPED_UNICODE);
+            }
+            $stmt->close();
+            $conn->close();
+            exit();
+        }
+
+        // 2) GET all_data
+        if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['all_data'])) {
+            try {
+                $query = "SELECT id_bao_tri, id_thiet_bi, DATE_FORMAT(ngay_bao_tri, '%Y-%m-%d') AS ngay_bao_tri,
+                                 loai_bao_tri, chi_phi, nhan_vien_phu_trach, mo_ta, ket_qua
+                          FROM bao_tri
+                          ORDER BY ngay_bao_tri DESC";
+                $stmt = $conn->prepare($query);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                
+                if ($result->num_rows > 0) {
+                    $data = [];
+                    while ($row = $result->fetch_assoc()) {
+                        $row['chi_phi'] = number_format((float)$row['chi_phi'], 2, '.', '');
+                        $data[] = $row;
+                    }
+                    echo json_encode(["success" => true, "data" => $data], JSON_UNESCAPED_UNICODE);
+                } else {
+                    echo json_encode(["success" => false, "message" => "Không tìm thấy dữ liệu"], JSON_UNESCAPED_UNICODE);
+                }
+            } catch (Exception $e) {
+                echo json_encode(["success" => false, "message" => "Lỗi: " . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+            }
+            $stmt->close();
+            exit();
+        }
+
+        // 3) GET latest
+        if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['latest'])) {
+            try {
+                $query = "SELECT id_bao_tri, id_thiet_bi, DATE_FORMAT(ngay_bao_tri, '%Y-%m-%d') AS ngay_bao_tri,
+                                 loai_bao_tri, chi_phi, nhan_vien_phu_trach, mo_ta, ket_qua
+                          FROM bao_tri
+                          ORDER BY ngay_bao_tri DESC
+                          LIMIT 1";
+                $stmt = $conn->prepare($query);
+                $stmt->execute();
+                $result = $stmt->get_result();
+                
+                if ($result->num_rows > 0) {
+                    $data = $result->fetch_assoc();
+                    $data['chi_phi'] = number_format((float)$data['chi_phi'], 2, '.', '');
+                    echo json_encode(["success" => true, "data" => $data], JSON_UNESCAPED_UNICODE);
+                } else {
+                    echo json_encode(["success" => false, "message" => "Không tìm thấy dữ liệu"], JSON_UNESCAPED_UNICODE);
+                }
+            } catch (Exception $e) {
+                echo json_encode(["success" => false, "message" => "Lỗi: " . $e->getMessage()], JSON_UNESCAPED_UNICODE);
+            }
+            $stmt->close();
+            exit();
+        }
+
+        // 4) POST add record
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $rawInput = file_get_contents("php://input");
+            $json = json_decode($rawInput, true);
+            if (isset($json['add'])) {
+                $stmt = $conn->prepare("INSERT INTO bao_tri
+                    (id_thiet_bi, ngay_bao_tri, loai_bao_tri, chi_phi,
+                     nhan_vien_phu_trach, mo_ta, ket_qua)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)"
+                );
+                $stmt->bind_param("sssssss",
+                    $json['id_thiet_bi'],
+                    $json['ngay_bao_tri'],
+                    $json['loai_bao_tri'],
+                    $json['chi_phi'],
+                    $json['nhan_vien_phu_trach'],
+                    $json['mo_ta'],
+                    $json['ket_qua']
+                );
+
+                if ($stmt->execute()) {
+                    echo json_encode(["success" => true, "message" => "Record added successfully"]);
+                } else {
+                    echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+                }
+                $stmt->close();
+                exit();
+            }
+        }
+
+        // 5) POST update record
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['update'])) {
+            $rawInput = file_get_contents("php://input");
+            $data = json_decode($rawInput, true);
+
+            if (!$data) {
+                echo json_encode(["success" => false, "message" => "Invalid data"]);
+                exit();
+            }
+            if (!isset($data['id_bao_tri'])) {
+                echo json_encode(["success" => false, "message" => "Missing id_bao_tri"]);
+                exit();
+            }
+
+            $id_bao_tri = $data['id_bao_tri'];
+            unset($data['id_bao_tri']);
+            if (empty($data)) {
+                echo json_encode(["success" => false, "message" => "No fields to update"]);
+                exit();
+            }
+
+            // Check 'them' column
+            $checkColumn = $conn->query("SHOW COLUMNS FROM bao_tri LIKE 'them'");
+            if ($checkColumn->num_rows === 0) {
+                $conn->query("ALTER TABLE bao_tri ADD COLUMN them VARCHAR(255)");
+            }
+
+            $allowedFields = ['id_thiet_bi','ngay_bao_tri','loai_bao_tri','chi_phi',
+                              'nhan_vien_phu_trach','mo_ta','ket_qua','them'];
+            $fields = [];
+            $values = [];
+            $types  = "";
+
+            foreach ($data as $key => $value) {
+                if (in_array($key, $allowedFields)) {
+                    $fields[] = "$key = ?";
+                    $values[] = $value;
+                    $types   .= "s";
+                }
+            }
+            if (empty($fields)) {
+                echo json_encode(["success" => false, "message" => "No valid fields"]);
+                exit();
+            }
+
+            $values[] = $id_bao_tri;
+            $types   .= "s";
+            $sql = "UPDATE bao_tri SET " . implode(", ", $fields) . " WHERE id_bao_tri = ?";
+            $stmt = $conn->prepare($sql);
+
+            if (!$stmt) {
+                echo json_encode(["success" => false, "message" => "Statement preparation error: " . $conn->error]);
+                exit();
+            }
+
+            $stmt->bind_param($types, ...$values);
+            if ($stmt->execute()) {
+                echo json_encode(["success" => true, "message" => "Update successful"]);
+            } else {
+                echo json_encode(["success" => false, "message" => "Update error: " . $stmt->error]);
+            }
+            $stmt->close();
+            exit();
+        }
+
+        // 6) POST delete via form
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
+            $stmt = $conn->prepare("DELETE FROM bao_tri WHERE id_bao_tri=?");
+            $id_bao_tri = $_POST['id_bao_tri'];
+            $stmt->bind_param("s", $id_bao_tri);
+
+            if ($stmt->execute()) {
+                echo json_encode(["success" => true, "message" => "Record deleted successfully"]);
+            } else {
+                echo json_encode(["success" => false, "message" => "Error deleting record: " . $stmt->error]);
+            }
+            $stmt->close();
+            exit();
+        }
+
+        // 7) POST delete via JSON
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_GET['delete'])) {
+            $rawInput = file_get_contents("php://input");
+            $json = json_decode($rawInput, true);
+
+            if (!isset($json['id_bao_tri'])) {
+                echo json_encode(["success" => false, "message" => "Missing ID"]);
+                exit();
+            }
+            $stmt = $conn->prepare("DELETE FROM bao_tri WHERE id_bao_tri = ?");
+            $stmt->bind_param("s", $json['id_bao_tri']);
+
+            if ($stmt->execute()) {
+                echo json_encode(["success" => true, "message" => "Record deleted successfully"]);
+            } else {
+                echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+            }
+            $stmt->close();
+            exit();
+        }
+
+        $conn->close();
+        exit();
+    }
+}
+
+// Close the original connection if still open
+if ($conn) {
+    $conn->close();
+}
+?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -116,7 +374,7 @@ $conn->close();
 </head>
 <body>
     <div class="container">
-        <?php if ($data): ?>
+        <?php if (!empty($data)): ?>
             <h1>Thông tin bảo trì thiết bị #<?php echo htmlspecialchars($data['id_thiet_bi']); ?></h1>
             <table>
                 <tr>
@@ -137,7 +395,9 @@ $conn->close();
                 </tr>
                 <tr>
                     <th>Chi Phí</th>
-                    <td class="chi-phi"><?php echo number_format($data['chi_phi'], 0, ',', '.'); ?> VNĐ</td>
+                    <td class="chi-phi">
+                        <?php echo number_format($data['chi_phi'], 0, ',', '.'); ?> VNĐ
+                    </td>
                 </tr>
                 <tr>
                     <th>Nhân Viên Phụ Trách</th>
@@ -154,7 +414,7 @@ $conn->close();
             </table>
         <?php else: ?>
             <div class="error">
-                Không tìm thấy thông tin bảo trì cho ID: <?php echo htmlspecialchars($id); ?>
+                Không tìm thấy thông tin bảo trì cho ID thiết bị đã nhập.
             </div>
         <?php endif; ?>
     </div>
