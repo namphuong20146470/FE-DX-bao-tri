@@ -158,23 +158,6 @@ function Home() {
 </TableContainer>
         </Paper>
 
-        {/* <Box className={classes.qrCodesSection}>
-          <Typography variant="h6" gutterBottom align="center">
-            QR Codes
-          </Typography>
-          {filteredData.map((item) => (
-            <Box key={item.id_bao_tri} className={classes.qrCodeItem}>
-              <QRCode 
-                value={`https://ebaotri.hoangphucthanh.vn/index.php?id=${item.id_thiet_bi}`}
-                size={128}
-                level="L"
-              />
-              <Typography variant="subtitle2" sx={{ mt: 1 }}>
-                ID Thiết bị: {item.id_thiet_bi}
-              </Typography>
-            </Box>
-          ))}
-        </Box> */}
       </Box>
     </Box>
   );
