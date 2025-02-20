@@ -16,6 +16,11 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 $conn->set_charset("utf8");
+
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
+header("Content-Type: application/json");
 function handleDBQuery($conn, $query, $params = [], $types = '') {
     $stmt = $conn->prepare($query);
     if ($params) {
@@ -59,9 +64,13 @@ if (isset($_GET['id'])) {
 if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METHOD'] === 'POST') {
     // Set JSON headers
     header("Access-Control-Allow-Origin: *");
-    header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); 
-    header("Access-Control-Allow-Headers: Content-Type");
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+    header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
     header("Content-Type: application/json");
+
+    if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+        exit(0);
+    }
 
     // Re-connect here (mirroring user snippet)
     $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -74,8 +83,8 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
     if (isset($_GET['id']) || isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METHOD'] === 'POST') {
         // Set JSON headers again (as in user snippet)
         header("Access-Control-Allow-Origin: *");
-        header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); 
-        header("Access-Control-Allow-Headers: Content-Type");
+        header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+        header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With");
         header("Content-Type: application/json");
 
         // 1) GET by ?id (latest record by device)
@@ -164,33 +173,96 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
         }
 
         // 4) POST add record
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['add'])) {
             $rawInput = file_get_contents("php://input");
             $json = json_decode($rawInput, true);
-            if (isset($json['add'])) {
-                $stmt = $conn->prepare("INSERT INTO bao_tri
-                    (id_thiet_bi, ngay_bao_tri, loai_bao_tri, chi_phi,
-                     nhan_vien_phu_trach, mo_ta, ket_qua)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)"
-                );
-                $stmt->bind_param("sssssss",
-                    $json['id_thiet_bi'],
-                    $json['ngay_bao_tri'],
-                    $json['loai_bao_tri'],
-                    $json['chi_phi'],
-                    $json['nhan_vien_phu_trach'],
-                    $json['mo_ta'],
-                    $json['ket_qua']
-                );
 
-                if ($stmt->execute()) {
-                    echo json_encode(["success" => true, "message" => "Record added successfully"]);
-                } else {
-                    echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
-                }
-                $stmt->close();
+            $stmt = $conn->prepare("INSERT INTO bao_tri (
+                id_thiet_bi,
+                ngay_bao_tri,
+                loai_bao_tri,
+                chi_phi,
+                nhan_vien_phu_trach,
+                mo_ta,
+                ket_qua
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param(
+                "sssssss",
+                $json['id_thiet_bi'],
+                $json['ngay_bao_tri'],
+                $json['loai_bao_tri'],
+                $json['chi_phi'],
+                $json['nhan_vien_phu_trach'],
+                $json['mo_ta'],
+                $json['ket_qua']
+            );
+
+            if ($stmt->execute()) {
+                echo json_encode(["success" => true, "message" => "Record added successfully"]);
+            } else {
+                echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+            }
+            $stmt->close();
+            exit();
+        }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['add_extended'])) {
+            $rawInput = file_get_contents("php://input");
+            $json = json_decode($rawInput, true);
+            if (!$json) {
+                echo json_encode(["success" => false, "message" => "Invalid JSON"]);
                 exit();
             }
+
+            // Define the standard fields already in the table.
+            $defaultFields = ['id_thiet_bi', 'ngay_bao_tri', 'loai_bao_tri', 'chi_phi', 'nhan_vien_phu_trach', 'mo_ta', 'ket_qua'];
+
+            $columns = [];
+            $placeholders = [];
+            $values = [];
+            $types = "";
+
+            // Add default fields if present in JSON.
+            foreach ($defaultFields as $field) {
+                if (isset($json[$field])) {
+                    $columns[] = $field;
+                    $placeholders[] = '?';
+                    $values[] = $json[$field];
+                    $types .= 's';
+                }
+            }
+
+            // Process any additional fields, such as "khach_hang".
+            foreach ($json as $key => $value) {
+                if (!in_array($key, $defaultFields)) {
+                    // Check if the column exists; if not, add it.
+                    $escapedKey = $conn->real_escape_string($key);
+                    $check = $conn->query("SHOW COLUMNS FROM bao_tri LIKE '$escapedKey'");
+                    if ($check->num_rows === 0) {
+                        $conn->query("ALTER TABLE bao_tri ADD COLUMN `$key` VARCHAR(255)");
+                    }
+                    $columns[] = $key;
+                    $placeholders[] = '?';
+                    $values[] = $value;
+                    $types .= 's';
+                }
+            }
+
+            // Build the INSERT statement dynamically.
+            $sql = "INSERT INTO bao_tri (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $placeholders) . ")";
+            $stmt = $conn->prepare($sql);
+            if (!$stmt) {
+                echo json_encode(["success" => false, "message" => "Statement preparation error: " . $conn->error]);
+                exit();
+            }
+
+            $stmt->bind_param($types, ...$values);
+            if ($stmt->execute()) {
+                echo json_encode(["success" => true, "message" => "Record added successfully with additional fields"]);
+            } else {
+                echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+            }
+            $stmt->close();
+            exit();
         }
 
         // 5) POST update record
@@ -255,6 +327,43 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
                 echo json_encode(["success" => false, "message" => "Update error: " . $stmt->error]);
             }
             $stmt->close();
+            exit();
+        }
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['update_auto'])) {
+            $raw = file_get_contents("php://input");
+            $input = json_decode($raw, true);
+            $res = $conn->query("SELECT MAX(id_bao_tri) AS max_id FROM bao_tri");
+            $row = $res->fetch_assoc();
+            if (!$row['max_id']) {
+                echo json_encode(["success" => false, "message" => "No record to update"]);
+                exit();
+            }
+            $id = $row['max_id'];
+            $fields = [];
+            $values = [];
+            $types = "";
+            foreach (["id_thiet_bi","ngay_bao_tri","loai_bao_tri","chi_phi","nhan_vien_phu_trach","mo_ta","ket_qua"] as $col) {
+                if (isset($input[$col])) {
+                    $fields[] = "$col = ?";
+                    $types .= "s";
+                    $values[] = $input[$col];
+                }
+            }
+            if (!$fields) {
+                echo json_encode(["success" => false, "message" => "No data"]);
+                exit();
+            }
+            $values[] = $id;
+            $types .= "s";
+            $sql = "UPDATE bao_tri SET " . implode(", ", $fields) . " WHERE id_bao_tri = ?";
+            $up = $conn->prepare($sql);
+            $up->bind_param($types, ...$values);
+            if ($up->execute()) {
+                echo json_encode(["success" => true, "message" => "Update done"]);
+            } else {
+                echo json_encode(["success" => false, "message" => $up->error]);
+            }
+            $up->close();
             exit();
         }
 
@@ -372,10 +481,10 @@ if ($conn) {
         <?php if (!empty($data)): ?>
             <h1>Thông tin bảo trì thiết bị #<?php echo htmlspecialchars($data['id_thiet_bi']); ?></h1>
             <table>
-                <tr>
+                <!-- <tr>
                     <th>ID Bảo Trì</th>
                     <td><?php echo htmlspecialchars($data['id_bao_tri']); ?></td>
-                </tr>
+                </tr> -->
                 <tr>
                     <th>ID Thiết Bị</th>
                     <td><?php echo htmlspecialchars($data['id_thiet_bi']); ?></td>
@@ -388,12 +497,12 @@ if ($conn) {
                     <th>Loại Bảo Trì</th>
                     <td><?php echo htmlspecialchars($data['loai_bao_tri']); ?></td>
                 </tr>
-                <tr>
+                <!-- <tr>
                     <th>Chi Phí</th>
                     <td class="chi-phi">
                         <?php echo number_format($data['chi_phi'], 0, ',', '.'); ?> VNĐ
                     </td>
-                </tr>
+                </tr> -->
                 <tr>
                     <th>Nhân Viên Phụ Trách</th>
                     <td><?php echo htmlspecialchars($data['nhan_vien_phu_trach']); ?></td>
