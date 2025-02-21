@@ -61,7 +61,10 @@ function Home() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [columns, setColumns] = useState([]);
+  const [newField, setNewField] = useState("");
   const ITEMS_PER_PAGE = 10;
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -70,11 +73,48 @@ function Home() {
     try {
       const response = await fetch("https://ebaotri.hoangphucthanh.vn/index.php?all_data");
       const result = await response.json();
-      if (result.success) {
-        setData(result.data);
-      }
+      if (result.success) setData(result.data);
     } catch (error) {
       console.error("Error fetching data:", error);
+    }
+  };
+
+  const handleAddColumn = async () => {
+    const dataToSend = {
+      id_thiet_bi: "TB111",
+      ngay_bao_tri: "2025-02-17",
+      loai_bao_tri: "Định kỳ",
+      chi_phi: "2",
+      nhan_vien_phu_trach: "TNP",
+      mo_ta: "Kiểm tra máy bơm",
+      ket_qua: "Hoạt động ko tốt",
+      khach_hang: "TNP",
+      dia_diem: "TPHCM",
+      [newField]: ""
+    };
+    console.log("📤 Dữ liệu gửi đi:", JSON.stringify(dataToSend, null, 2));
+    try {
+      const response = await fetch("https://ebaotri.hoangphucthanh.vn/index.php?add_extended", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(dataToSend),
+      });
+      const textResponse = await response.text();
+      console.log("📥 Phản hồi từ server:", textResponse);
+      try {
+        const result = JSON.parse(textResponse);
+        if (result.success) {
+          setColumns([...columns, newField]);
+          setNewField("");
+          fetchData();
+        } else {
+          console.error("❌ Lỗi từ server:", result.message);
+        }
+      } catch (jsonError) {
+        console.error("❌ Server không trả về JSON hợp lệ:", textResponse);
+      }
+    } catch (error) {
+      console.error("❌ Lỗi kết nối:", error);
     }
   };
 
@@ -82,27 +122,19 @@ function Home() {
     setEditFormData(row);
     setEditDialogOpen(true);
   };
-
   const handleEditClose = () => {
     setEditDialogOpen(false);
     setEditFormData({});
   };
-
   const handleInputChange = (event) => {
     const { name, value } = event.target;
-    setEditFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setEditFormData((prev) => ({ ...prev, [name]: value }));
   };
-
   const handleSave = async () => {
     try {
       const response = await fetch(`https://ebaotri.hoangphucthanh.vn/index.php?update`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editFormData)
       });
       const result = await response.json();
@@ -133,17 +165,11 @@ function Home() {
         className={classes.searchBar}
         sx={{ backgroundColor: "#fff" }}
       />
-
       <Box className={classes.contentContainer}>
         <Paper className={classes.tableContainer}>
-          <Typography 
-            variant="h5" 
-            align="center" 
-            sx={{ py: 3, borderBottom: "1px solid #e0e0e0" }}
-          >
+          <Typography variant="h5" align="center" sx={{ py: 3, borderBottom: "1px solid #e0e0e0" }}>
             Danh sách bảo trì thiết bị
           </Typography>
-
           <TableContainer>
             <Table>
               <TableHead className={classes.tableHeader}>
@@ -157,6 +183,9 @@ function Home() {
                   <TableCell className={classes.tableCell}><strong>Mô Tả</strong></TableCell>
                   <TableCell className={classes.tableCell}><strong>Kết Quả</strong></TableCell>
                   <TableCell className={classes.tableCell}><strong>Chỉnh Sửa</strong></TableCell>
+                  {columns.map((col) => (
+                    <TableCell key={col} className={classes.tableCell}><strong>{col}</strong></TableCell>
+                  ))}
                   <TableCell className={classes.tableCell}><strong>QR Code</strong></TableCell>
                 </TableRow>
               </TableHead>
@@ -188,6 +217,13 @@ function Home() {
                           Chỉnh sửa
                         </Button>
                       </TableCell>
+
+                      {columns.map((col) => (
+                        <TableCell key={col} className={classes.tableCell}>
+                          {row[col]}
+                        </TableCell>
+                      ))}
+                      
                       <TableCell className={classes.tableCell}>
                         <QRCode
                           value={`https://ebaotri.hoangphucthanh.vn/index.php?id=${row.id_thiet_bi}`}
@@ -195,11 +231,12 @@ function Home() {
                           level="L"
                         />
                       </TableCell>
+                 
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={10} align="center" className={classes.tableCell}>
+                    <TableCell colSpan={10 + columns.length} align="center" className={classes.tableCell}>
                       Không có dữ liệu
                     </TableCell>
                   </TableRow>
@@ -209,7 +246,6 @@ function Home() {
           </TableContainer>
         </Paper>
       </Box>
-
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
         <Pagination
           count={totalPages}
@@ -221,7 +257,6 @@ function Home() {
           color="primary"
         />
       </Box>
-
       <Dialog open={editDialogOpen} onClose={handleEditClose} maxWidth="md" fullWidth>
         <DialogTitle>Chỉnh sửa thông tin bảo trì</DialogTitle>
         <DialogContent>
@@ -291,6 +326,19 @@ function Home() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <Box sx={{ mt: 2 }}>
+        <TextField
+          label="Nhập tên trường mới"
+          variant="outlined"
+          value={newField}
+          onChange={(e) => setNewField(e.target.value)}
+          fullWidth
+        />
+        <Button variant="contained" color="primary" onClick={handleAddColumn} sx={{ mt: 1 }}>
+          Thêm trường
+        </Button>
+      </Box>
     </Box>
   );
 }

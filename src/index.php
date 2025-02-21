@@ -205,6 +205,10 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
             $stmt->close();
             exit();
         }
+
+
+
+        //add_extended
         if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['add_extended'])) {
             $rawInput = file_get_contents("php://input");
             $json = json_decode($rawInput, true);
@@ -212,54 +216,42 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
                 echo json_encode(["success" => false, "message" => "Invalid JSON"]);
                 exit();
             }
-
-            // Define the standard fields already in the table.
+        
+            if (!isset($json['id_thiet_bi']) || empty($json['id_thiet_bi'])) {
+                echo json_encode(["success" => false, "message" => "Thiếu id_thiet_bi"]);
+                exit();
+            }
+        
             $defaultFields = ['id_thiet_bi', 'ngay_bao_tri', 'loai_bao_tri', 'chi_phi', 'nhan_vien_phu_trach', 'mo_ta', 'ket_qua'];
-
             $columns = [];
             $placeholders = [];
             $values = [];
             $types = "";
-
-            // Add default fields if present in JSON.
-            foreach ($defaultFields as $field) {
-                if (isset($json[$field])) {
-                    $columns[] = $field;
-                    $placeholders[] = '?';
-                    $values[] = $json[$field];
-                    $types .= 's';
-                }
-            }
-
-            // Process any additional fields, such as "khach_hang".
+        
             foreach ($json as $key => $value) {
-                if (!in_array($key, $defaultFields)) {
-                    // Check if the column exists; if not, add it.
-                    $escapedKey = $conn->real_escape_string($key);
-                    $check = $conn->query("SHOW COLUMNS FROM bao_tri LIKE '$escapedKey'");
-                    if ($check->num_rows === 0) {
-                        $conn->query("ALTER TABLE bao_tri ADD COLUMN `$key` VARCHAR(255)");
-                    }
-                    $columns[] = $key;
-                    $placeholders[] = '?';
-                    $values[] = $value;
-                    $types .= 's';
+                $escapedKey = $conn->real_escape_string($key);
+                $check = $conn->query("SHOW COLUMNS FROM bao_tri LIKE '$escapedKey'");
+                if ($check->num_rows === 0) {
+                    $conn->query("ALTER TABLE bao_tri ADD COLUMN `$key` VARCHAR(255)");
                 }
+                $columns[] = $key;
+                $placeholders[] = '?';
+                $values[] = $value;
+                $types .= 's';
             }
-
-            // Build the INSERT statement dynamically.
+        
             $sql = "INSERT INTO bao_tri (" . implode(", ", $columns) . ") VALUES (" . implode(", ", $placeholders) . ")";
             $stmt = $conn->prepare($sql);
             if (!$stmt) {
-                echo json_encode(["success" => false, "message" => "Statement preparation error: " . $conn->error]);
+                echo json_encode(["success" => false, "message" => "Lỗi SQL: " . $conn->error]);
                 exit();
             }
-
+        
             $stmt->bind_param($types, ...$values);
             if ($stmt->execute()) {
-                echo json_encode(["success" => true, "message" => "Record added successfully with additional fields"]);
+                echo json_encode(["success" => true, "message" => "Thêm dữ liệu thành công"]);
             } else {
-                echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+                echo json_encode(["success" => false, "message" => "Lỗi thực thi: " . $stmt->error]);
             }
             $stmt->close();
             exit();
