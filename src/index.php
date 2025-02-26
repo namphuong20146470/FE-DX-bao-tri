@@ -4,6 +4,20 @@ session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Handle preflight OPTIONS requests for CORS
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
+    header("Access-Control-Allow-Origin: *");
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+    header("Access-Control-Allow-Headers: Content-Type");
+    header("HTTP/1.1 200 OK");
+    exit();
+}
+
+// Set CORS headers for all requests
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
+
 // Database config
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
@@ -163,34 +177,105 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
             exit();
         }
 
-        // 4) POST add record
-        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $rawInput = file_get_contents("php://input");
-            $json = json_decode($rawInput, true);
-            if (isset($json['add'])) {
-                $stmt = $conn->prepare("INSERT INTO bao_tri
-                    (id_thiet_bi, ngay_bao_tri, loai_bao_tri, chi_phi,
-                     nhan_vien_phu_trach, mo_ta, ket_qua)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)"
-                );
-                $stmt->bind_param("sssssss",
-                    $json['id_thiet_bi'],
-                    $json['ngay_bao_tri'],
-                    $json['loai_bao_tri'],
-                    $json['chi_phi'],
-                    $json['nhan_vien_phu_trach'],
-                    $json['mo_ta'],
-                    $json['ket_qua']
-                );
+        // 4) POST add record(s) - supports both single and bulk imports
+        if ($_SERVER['REQUEST_METHOD'] == 'POST' && (!isset($_GET['update']) && !isset($_GET['delete']))) {
 
-                if ($stmt->execute()) {
-                    echo json_encode(["success" => true, "message" => "Record added successfully"]);
-                } else {
-                    echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
-                }
-                $stmt->close();
-                exit();
+            header("Access-Control-Allow-Origin: *");
+            header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); 
+            header("Access-Control-Allow-Headers: Content-Type");
+            header("Content-Type: application/json");
+
+            $rawInput = file_get_contents("php://input");
+            $data = json_decode($rawInput, true);
+            
+            // Check if required columns exist and add if missing
+            $checkCustomer = $conn->query("SHOW COLUMNS FROM bao_tri LIKE 'khach_hang'");
+            if ($checkCustomer->num_rows === 0) {
+            $conn->query("ALTER TABLE bao_tri ADD COLUMN khach_hang VARCHAR(255)");
             }
+            
+            $checkRegion = $conn->query("SHOW COLUMNS FROM bao_tri LIKE 'dia_diem'");
+            if ($checkRegion->num_rows === 0) {
+            $conn->query("ALTER TABLE bao_tri ADD COLUMN dia_diem VARCHAR(255)");
+            }
+            
+            // Handle bulk import (array of records)
+            if (isset($data[0]) && is_array($data)) {
+            $conn->begin_transaction();
+            $stmt = $conn->prepare("INSERT INTO bao_tri
+                (id_thiet_bi, ngay_bao_tri, loai_bao_tri, khach_hang, 
+                dia_diem, nhan_vien_phu_trach, mo_ta, ket_qua)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            
+            $results = [
+                'success' => 0,
+                'failed' => 0,
+                'errors' => []
+            ];
+            
+            foreach ($data as $index => $record) {
+                $stmt->bind_param("ssssssss",
+                $record['id_thiet_bi'],
+                $record['ngay_bao_tri'],
+                $record['loai_bao_tri'],
+                $record['khach_hang'],
+                $record['dia_diem'],
+                $record['nhan_vien_phu_trach'],
+                $record['mo_ta'],
+                $record['ket_qua']
+                );
+                
+                if ($stmt->execute()) {
+                $results['success']++;
+                } else {
+                $results['failed']++;
+                $results['errors'][] = "Row " . ($index + 1) . ": " . $stmt->error;
+                }
+            }
+            
+            if ($results['failed'] > 0) {
+                $conn->rollback();
+                echo json_encode([
+                "success" => false, 
+                "message" => "Import failed", 
+                "details" => $results
+                ], JSON_UNESCAPED_UNICODE);
+            } else {
+                $conn->commit();
+                echo json_encode([
+                "success" => true, 
+                "message" => "Imported " . $results['success'] . " records successfully"
+                ], JSON_UNESCAPED_UNICODE);
+            }
+            $stmt->close();
+            exit();
+            }
+            
+            // Handle single record insert (backward compatibility)
+            $json = $data;
+            $stmt = $conn->prepare("INSERT INTO bao_tri
+            (id_thiet_bi, ngay_bao_tri, loai_bao_tri, khach_hang, 
+            dia_diem, nhan_vien_phu_trach, mo_ta, ket_qua)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+            );
+            $stmt->bind_param("ssssssss",
+            $json['id_thiet_bi'],
+            $json['ngay_bao_tri'],
+            $json['loai_bao_tri'],
+            $json['khach_hang'],
+            $json['dia_diem'],
+            $json['nhan_vien_phu_trach'],
+            $json['mo_ta'],
+            $json['ket_qua']
+            );
+
+            if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Record added successfully"]);
+            } else {
+            echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+            }
+            $stmt->close();
+            exit();
         }
 
         // 5) POST update record

@@ -148,6 +148,117 @@ function Home() {
       console.error("Update error:", error);
     }
   };
+  // Import functionality
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [importStatus, setImportStatus] = useState({ loading: false, error: null, success: false });
+  const fileInputRef = React.useRef(null);
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  };
+
+  const handleImportClick = () => {
+    setImportDialogOpen(true);
+    setImportStatus({ loading: false, error: null, success: false });
+  };
+
+  const handleImportClose = () => {
+    setImportDialogOpen(false);
+    setSelectedFile(null);
+  };
+
+  const handleImport = async () => {
+    if (!selectedFile) {
+      setImportStatus({ loading: false, error: "Vui lòng chọn file CSV", success: false });
+      return;
+    }
+    
+    setImportStatus({ loading: true, error: null, success: false });
+    
+    try {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const text = e.target.result;
+        const lines = text.split('\n');
+        const headers = lines[0].split(',');
+        
+        // Process each data row
+        const dataRows = lines.slice(1).filter(line => line.trim() !== '');
+        
+        for (const row of dataRows) {
+          const values = parseCSVRow(row);
+          if (values.length !== headers.length) {
+            continue; // Skip malformed rows
+          }
+          
+          const rowData = {};
+          headers.forEach((header, index) => {
+            const cleanHeader = header.trim();
+            rowData[cleanHeader] = values[index].trim().replace(/^"|"$/g, '');
+          });
+          
+          // Send data to server
+          const response = await fetch("https://ebaotri.hoangphucthanh.vn/index.php?add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(rowData)
+          });
+          
+          const result = await response.json();
+          if (!result.success) {
+            throw new Error(`Import failed: ${result.message || 'Unknown error'}`);
+          }
+        }
+        
+        setImportStatus({ loading: false, error: null, success: true });
+        fetchData();
+        setTimeout(() => {
+          handleImportClose();
+        }, 2000);
+      };
+      
+      reader.onerror = () => {
+        setImportStatus({ loading: false, error: "Lỗi khi đọc file", success: false });
+      };
+      
+      reader.readAsText(selectedFile);
+    } catch (error) {
+      console.error("Import error:", error);
+      setImportStatus({ loading: false, error: error.message, success: false });
+    }
+  };
+
+  // Helper function to parse CSV rows correctly (handles quoted values)
+  const parseCSVRow = (row) => {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < row.length; i++) {
+      const char = row[i];
+      
+      if (char === '"') {
+        if (inQuotes && i + 1 < row.length && row[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current);
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    
+    result.push(current);
+    return result;
+  };
 
   const filteredData = data.filter((row) =>
     String(row.id_thiet_bi).toLowerCase().includes(searchId.toLowerCase())
@@ -165,6 +276,119 @@ function Home() {
         className={classes.searchBar}
         sx={{ backgroundColor: "#fff" }}
       />
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2, gap: 2 }}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleImportClick}
+        >
+          Import
+        </Button>
+        <Dialog open={importDialogOpen} onClose={handleImportClose} maxWidth="sm" fullWidth>
+          <DialogTitle>Import CSV File</DialogTitle>
+          <DialogContent>
+            <Box sx={{ py: 2 }}>
+              <input
+                accept=".csv"
+                type="file"
+                onChange={handleFileChange}
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                id="contained-button-file"
+              />
+              <label htmlFor="contained-button-file">
+                <Button variant="contained" component="span">
+                  Select CSV File
+                </Button>
+              </label>
+              {selectedFile && (
+                <Typography sx={{ mt: 2 }}>
+                  Selected file: {selectedFile.name}
+                </Typography>
+              )}
+              {importStatus.loading && (
+                <Typography sx={{ mt: 2, color: 'text.secondary' }}>
+                  Importing data, please wait...
+                </Typography>
+              )}
+              {importStatus.error && (
+                <Typography sx={{ mt: 2, color: 'error.main' }}>
+                  {importStatus.error}
+                </Typography>
+              )}
+              {importStatus.success && (
+                <Typography sx={{ mt: 2, color: 'success.main' }}>
+                  Import completed successfully!
+                </Typography>
+              )}
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleImportClose}>Cancel</Button>
+            <Button 
+              onClick={handleImport} 
+              variant="contained" 
+              color="primary"
+              disabled={!selectedFile || importStatus.loading}
+            >
+              {importStatus.loading ? "Importing..." : "Import"}
+            </Button>
+          </DialogActions>
+        </Dialog>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={() => {
+            // Convert data to CSV
+            const headers = [
+              "ID Bảo Trì", 
+              "ID Thiết Bị", 
+              "Ngày Bảo Trì", 
+              "Loại Bảo Trì", 
+              "Khách Hàng", 
+              "Địa Điểm",
+              "Nhân Viên Phụ Trách", 
+              "Mô Tả", 
+              "Kết Quả",
+              ...columns
+            ];
+            
+            let csvContent = headers.join(",") + "\n";
+            
+            filteredData.forEach(row => {
+              const values = [
+                row.id_bao_tri,
+                row.id_thiet_bi,
+                row.ngay_bao_tri,
+                row.loai_bao_tri,
+                row.khach_hang,
+                row.dia_diem,
+                row.nhan_vien_phu_trach,
+                `"${(row.mo_ta || "").replace(/"/g, '""')}"`,
+                `"${(row.ket_qua || "").replace(/"/g, '""')}"`
+              ];
+              
+              // Add dynamic columns
+              columns.forEach(col => {
+                values.push(`"${(row[col] || "").replace(/"/g, '""')}"`);
+              });
+              
+              csvContent += values.join(",") + "\n";
+            });
+            
+            // Create download link
+            const encodedUri = encodeURI("data:text/csv;charset=utf-8," + csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `bao-tri-thiet-bi-${new Date().toISOString().slice(0, 10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }}
+        >
+          Export
+        </Button>
+      </Box>
       <Box className={classes.contentContainer}>
         <Paper className={classes.tableContainer}>
           <Typography variant="h5" align="center" sx={{ py: 3, borderBottom: "1px solid #e0e0e0" }}>
