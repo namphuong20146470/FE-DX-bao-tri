@@ -202,9 +202,6 @@ function Home() {
                       <TableCell className={classes.tableCell}>{row.id_thiet_bi}</TableCell>
                       <TableCell className={classes.tableCell}>{row.ngay_bao_tri}</TableCell>
                       <TableCell className={classes.tableCell}>{row.loai_bao_tri}</TableCell>
-                      {/* <TableCell className={classes.tableCell}>
-                        {parseFloat(row.chi_phi).toLocaleString()} VND
-                      </TableCell> */}
                       <TableCell className={classes.tableCell}>{row.khach_hang}</TableCell>
                       <TableCell className={classes.tableCell}>{row.dia_diem}</TableCell>
                       <TableCell className={classes.tableCell}>{row.nhan_vien_phu_trach}</TableCell>
@@ -226,34 +223,36 @@ function Home() {
                           {row[col]}
                         </TableCell>
                       ))}
-                      
+
                       <TableCell className={classes.tableCell}>
                         <QRCode
-                          value={`https://ebaotri.hoangphucthanh.vn/index.php?id=${row.id_thiet_bi}`}
+                          value={`https://ebaotri.hoangphucthanh.vn/index.php?id=${row.id_thiet_bi}/${encodeURIComponent(row.dia_diem)}`}
                           size={64}
                           level="L"
                         />
                       </TableCell>
-                 
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={10 + columns.length} align="center" className={classes.tableCell}>
-                      Không có dữ liệu
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
-      </Box>
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-        <Pagination
-          count={totalPages}
-          page={currentPage}
-          onChange={(event, value) => {
+
+
+
+                      </TableRow>
+                      ))
+                      ) : (
+                      <TableRow>
+                        <TableCell colSpan={10 + columns.length} align="center" className={classes.tableCell}>
+                          Không có dữ liệu
+                        </TableCell>
+                      </TableRow>
+                      )}
+                      </TableBody>
+                      </Table>
+                      </TableContainer>
+                      </Paper>
+                      </Box>
+                      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+                      <Pagination
+                        count={totalPages}
+                        page={currentPage}
+                        onChange={(event, value) => {
             setCurrentPage(value);
             window.scrollTo({ top: 0, behavior: 'smooth' });
           }}

@@ -27,31 +27,33 @@ function handleDBQuery($conn, $query, $params = [], $types = '') {
 // Check if ?id is passed for HTML rendering
 $data = null;
 if (isset($_GET['id'])) {
-    $id = $_GET['id'];
-    if (!is_numeric($id)) {
-        echo json_encode(["success" => false, "message" => "ID thiết bị không hợp lệ"]);
-        exit();
-    }
+    $parts = explode('/', $_GET['id']);
+    if (count($parts) === 2 && is_numeric($parts[0])) {
+        $id = $parts[0];
+        $location = $parts[1];
 
-    $query = "SELECT * FROM bao_tri
-              WHERE id_thiet_bi = ?
-              ORDER BY ngay_bao_tri DESC
-              LIMIT 1";
-    $stmt = $conn->prepare($query);
-    $stmt->bind_param("s", $id);
-    $stmt->execute();
-    $result = $stmt->get_result();
+        $query = "SELECT * FROM bao_tri
+                  WHERE id_thiet_bi = ? AND dia_diem = ?
+                  ORDER BY ngay_bao_tri DESC
+                  LIMIT 1";
+        $stmt = $conn->prepare($query);
+        $stmt->bind_param("ss", $id, $location);
+        $stmt->execute();
+        $result = $stmt->get_result();
 
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
-        if (isset($row['chi_phi'])) {
-            $row['chi_phi'] = number_format((float)$row['chi_phi'], 2, '.', '');
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            if (isset($row['chi_phi'])) {
+                $row['chi_phi'] = number_format((float)$row['chi_phi'], 2, '.', '');
+            }
+            $data = $row;
+        } else {
+            $data = null;
         }
-        $data = $row;
+        $stmt->close();
     } else {
         $data = null;
     }
-    $stmt->close();
 }
 
 // Check if it's an API request for all_data, latest, or POST
