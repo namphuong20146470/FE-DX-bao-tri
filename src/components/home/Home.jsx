@@ -178,7 +178,8 @@ function Home() {
                   <TableCell className={classes.tableCell}><strong>ID Thiết Bị</strong></TableCell>
                   <TableCell className={classes.tableCell}><strong>Ngày Bảo Trì</strong></TableCell>
                   <TableCell className={classes.tableCell}><strong>Loại Bảo Trì</strong></TableCell>
-                  <TableCell className={classes.tableCell}><strong>Chi Phí (VND)</strong></TableCell>
+                  <TableCell className={classes.tableCell}><strong>Khách Hàng</strong></TableCell>
+                  <TableCell className={classes.tableCell}><strong>Khu Vực</strong></TableCell>
                   <TableCell className={classes.tableCell}><strong>Nhân Viên Phụ Trách</strong></TableCell>
                   <TableCell className={classes.tableCell}><strong>Mô Tả</strong></TableCell>
                   <TableCell className={classes.tableCell}><strong>Kết Quả</strong></TableCell>
@@ -201,9 +202,11 @@ function Home() {
                       <TableCell className={classes.tableCell}>{row.id_thiet_bi}</TableCell>
                       <TableCell className={classes.tableCell}>{row.ngay_bao_tri}</TableCell>
                       <TableCell className={classes.tableCell}>{row.loai_bao_tri}</TableCell>
-                      <TableCell className={classes.tableCell}>
+                      {/* <TableCell className={classes.tableCell}>
                         {parseFloat(row.chi_phi).toLocaleString()} VND
-                      </TableCell>
+                      </TableCell> */}
+                      <TableCell className={classes.tableCell}>{row.khach_hang}</TableCell>
+                      <TableCell className={classes.tableCell}>{row.dia_diem}</TableCell>
                       <TableCell className={classes.tableCell}>{row.nhan_vien_phu_trach}</TableCell>
                       <TableCell className={classes.tableCell}>{row.mo_ta}</TableCell>
                       <TableCell className={classes.tableCell}>{row.ket_qua}</TableCell>

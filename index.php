@@ -386,7 +386,7 @@ if(isset($_GET['id']) || isset($_GET['all_data']) || isset($_GET['latest']) || $
                                 <tr><th>ID Thiết Bị</th><td>${record.id_thiet_bi}</td></tr>
                                 <tr><th>Ngày Bảo Trì</th><td>${record.ngay_bao_tri}</td></tr>
                                 <tr><th>Loại Bảo Trì</th><td>${record.loai_bao_tri}</td></tr>
-                                <tr><th>Chi Phí</th><td>${record.chi_phi} VND</td></tr>
+                             
                                 <tr><th>Nhân Viên Phụ Trách</th><td>${record.nhan_vien_phu_trach}</td></tr>
                                 <tr><th>Mô Tả</th><td>${record.mo_ta}</td></tr>
                                 <tr><th>Kết Quả</th><td>${record.ket_qua}</td></tr>
