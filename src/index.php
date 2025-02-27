@@ -24,6 +24,90 @@ define('DB_USER', 'root');
 define('DB_PASS', 'H&ptiot2024');
 define('DB_NAME', 'HOPT');
 
+
+// Thông tin kết nối tới MySQL database cho người dùng
+$userServername = "localhost";
+$userUsername = "root";
+$userPassword = "H&ptiot2024";
+$userDbname = "user";
+$connUser = new mysqli($userServername, $userUsername, $userPassword, $userDbname);
+// Kiểm tra kết nối
+if ($connUser->connect_error) {
+    die("User database connection failed: " . $connUser->connect_error);
+}
+
+if (isset($_GET['register']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $rawInput = file_get_contents("php://input");
+    $postData = json_decode($rawInput, true);
+
+    if (isset($postData['reg_username']) && isset($postData['reg_password'])) {
+        $reg_username = $connUser->real_escape_string($postData['reg_username']);
+        $reg_password = password_hash($connUser->real_escape_string($postData['reg_password']), PASSWORD_BCRYPT);
+
+        $stmt = $connUser->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+        $stmt->bind_param("ss", $reg_username, $reg_password);
+
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Registration successful"]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+        }
+        $stmt->close();
+        exit();
+    } else {
+        echo json_encode(["success" => false, "message" => "Username and password are required for registration"]);
+        exit();
+    }
+}
+if (isset($_POST['register'])) {
+    if (isset($_POST['reg_username']) && isset($_POST['reg_password'])) {
+        $reg_username = $connUser->real_escape_string($_POST['reg_username']);
+        $reg_password = password_hash($connUser->real_escape_string($_POST['reg_password']), PASSWORD_BCRYPT);
+
+        $stmt = $connUser->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+        $stmt->bind_param("ss", $reg_username, $reg_password);
+
+        if ($stmt->execute()) {
+            echo "<div class='alert alert-success'>Registration successful. <a href='#login'>Login here</a></div>";
+        } else {
+            echo "<div class='alert alert-danger'>Error: " . $stmt->error . "</div>";
+        }
+        $stmt->close();
+    } else {
+        echo "<div class='alert alert-warning'>Username and password are required for registration.</div>";
+    }
+}
+
+// Xử lý đăng nhập người dùng
+if (isset($_POST['login'])) {
+    if (isset($_POST['login_username']) && isset($_POST['login_password'])) {
+        $login_username = $connUser->real_escape_string($_POST['login_username']);
+        $login_password = $connUser->real_escape_string($_POST['login_password']);
+
+        $stmt = $connUser->prepare("SELECT password FROM users WHERE username = ?");
+        $stmt->bind_param("s", $login_username);
+        $stmt->execute();
+        $stmt->store_result();
+
+        if ($stmt->num_rows > 0) {
+            $stmt->bind_result($hashed_password);
+            $stmt->fetch();
+            if (password_verify($login_password, $hashed_password)) {
+                $_SESSION['username'] = $login_username;
+                header("Location: index.php");
+                exit();
+            } else {
+                echo "<div class='alert alert-danger'>Invalid password</div>";
+            }
+        } else {
+            echo "<div class='alert alert-danger'>Username not found</div>";
+        }
+        $stmt->close();
+    } else {
+        echo "<div class='alert alert-warning'>Username and password are required for login.</div>";
+    }
+}
+
 // Connect to DB
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 if ($conn->connect_error) {
@@ -86,12 +170,45 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
     $conn->set_charset("utf8");
 
     // Handle API requests
-    if (isset($_GET['id']) || isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METHOD'] === 'POST') {
-        // Set JSON headers again (as in user snippet)
-        header("Access-Control-Allow-Origin: *");
-        header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); 
-        header("Access-Control-Allow-Headers: Content-Type");
-        header("Content-Type: application/json");
+        if (isset($_GET['login']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            $rawInput = file_get_contents("php://input");
+            $postData = json_decode($rawInput, true);
+    
+            if (isset($postData['login_username']) && isset($postData['login_password'])) {
+                $login_username = $connUser->real_escape_string($postData['login_username']);
+                $login_password = $connUser->real_escape_string($postData['login_password']);
+    
+                $stmt = $connUser->prepare("SELECT password FROM users WHERE username = ?");
+                $stmt->bind_param("s", $login_username);
+                $stmt->execute();
+                $stmt->store_result();
+    
+                if ($stmt->num_rows > 0) {
+                    $stmt->bind_result($hashed_password);
+                    $stmt->fetch();
+                    if (password_verify($login_password, $hashed_password)) {
+                        $_SESSION['username'] = $login_username;
+                        echo json_encode(["success" => true, "message" => "Login successful"]);
+                    } else {
+                        echo json_encode(["success" => false, "message" => "Invalid password"]);
+                    }
+                } else {
+                    echo json_encode(["success" => false, "message" => "Username not found"]);
+                }
+                $stmt->close();
+                exit();
+            } else {
+                echo json_encode(["success" => false, "message" => "Username and password are required for login"]);
+                exit();
+            }
+        }
+        
+        if (isset($_GET['id']) || isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METHOD'] === 'POST') {
+            // Set JSON headers again (as in user snippet)
+            header("Access-Control-Allow-Origin: *");
+            header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); 
+            header("Access-Control-Allow-Headers: Content-Type");
+            header("Content-Type: application/json");
 
         // 1) GET by ?id (latest record by device)
         if (isset($_GET['id'])) {
@@ -450,6 +567,25 @@ if ($conn) {
             color: #1a73e8;
             font-weight: 600;
         }
+        .home-button {
+            display: block;
+            width: 200px;
+            margin: 20px auto 0;
+            padding: 12px 0;
+            background-color: #1a73e8;
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            transition: background-color 0.3s;
+        }
+        .home-button:hover {
+            background-color: #0d47a1;
+        }
     </style>
 </head>
 <body>
@@ -494,10 +630,12 @@ if ($conn) {
                     <td><?php echo htmlspecialchars($data['ket_qua']); ?></td>
                 </tr>
             </table>
+            <a href="https://baotri.hoangphucthanh.vn/" class="home-button">Về Trang Chủ</a>
         <?php else: ?>
             <div class="error">
                 Không tìm thấy thông tin bảo trì cho ID thiết bị đã nhập.
             </div>
+            <a href="https://baotri.hoangphucthanh.vn/" class="home-button">Về Trang Chủ</a>
         <?php endif; ?>
     </div>
 </body>
