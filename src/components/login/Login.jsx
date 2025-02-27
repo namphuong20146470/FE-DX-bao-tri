@@ -2,6 +2,7 @@ import React from 'react';
 import { Form, Input, Button, Checkbox, notification } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import './Login.css'; // Import file CSS tùy chỉnh
 
 function Login() {
   const navigate = useNavigate();
@@ -26,19 +27,13 @@ function Login() {
 
       if (response.ok && result.success) {
         console.log('Login successful');
-
-        // Nếu API không trả token, tạo token tạm thời
         localStorage.setItem('token', result.token || 'test-token');
-
         notification.success({
           message: 'Login Successful!',
           description: result.message || 'You have successfully logged in.',
           duration: 2,
         });
-
-        console.log("About to navigate to /home...");
-        navigate('/home'); // Điều hướng đến http://localhost:3000/#/home
-        console.log("Did navigate run?");
+        navigate('/');
       } else {
         throw new Error(result.message || 'Invalid username or password');
       }
@@ -52,22 +47,50 @@ function Login() {
     }
   };
 
+  const transparentStyle = {
+    background: 'transparent',
+    border: 'none',
+    color: '#fff', // Màu chữ trắng để dễ nhìn trên nền
+    boxShadow: 'none',
+  };
+
+  const formStyle = {
+    background: 'transparent',
+    padding: '20px',
+    borderRadius: '10px',
+  };
+
   return (
-    <div style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-      <Form name="login_form" onFinish={onFinish} style={{ width: 300, padding: 20, backgroundColor: '#fff', borderRadius: 10 }}>
+    <div className="login-wrapper">
+      <div className="login-container" style={formStyle}>
+        <h2 className="login-title" style={{ color: '#fff' }}>Welcome Back!</h2>
+        <Form name="login_form" onFinish={onFinish} className="login-form">
         <Form.Item name="username" rules={[{ required: true, message: 'Please enter your username!' }]}>
-          <Input prefix={<UserOutlined />} placeholder="Username" />
-        </Form.Item>
-        <Form.Item name="password" rules={[{ required: true, message: 'Please enter your password!' }]}>
-          <Input.Password prefix={<LockOutlined />} placeholder="Password" />
-        </Form.Item>
-        <Form.Item>
-          <Checkbox>Remember me</Checkbox>
-        </Form.Item>
-        <Form.Item>
-          <Button type="primary" htmlType="submit" block>Log in</Button>
-        </Form.Item>
-      </Form>
+  <Input
+    prefix={<UserOutlined style={{ color: 'white' }} />}
+    placeholder="Username"
+    className="login-input"
+  />
+</Form.Item>
+
+<Form.Item name="password" rules={[{ required: true, message: 'Please enter your password!' }]}>
+  <Input.Password
+    prefix={<LockOutlined style={{ color: 'white' }} />}
+    placeholder="Password"
+    className="login-input"
+  />
+</Form.Item>
+
+          <Form.Item>
+            <Checkbox style={{ color: '#fff' }}>Remember me</Checkbox>
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block className="login-button" style={transparentStyle}>
+              Log in
+            </Button>
+          </Form.Item>
+        </Form>
+      </div>
     </div>
   );
 }
