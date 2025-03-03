@@ -4,20 +4,18 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  /* background: linear-gradient(135deg, #73a5ff, #5477f5); */
-  background-image: url("./background.jpg");;
+  background-image: url("./background.jpg");
 }
 
 /* Container chứa form login với nền trắng, bo tròn và đổ bóng */
 .login-container {
   background: transparent;
-  backdrop-filter: blur(8px); /* Adds blur effect to background */
-  -webkit-backdrop-filter: blur(8px); /* Safari support */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   padding: 40px;
   border-radius: 12px;
-  box-shadow: 0 8px 16px transparent;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
   width: 450px;
-  /* height:300px; */
   text-align: center;
 }
 
@@ -26,7 +24,6 @@
   margin-bottom: 24px;
   font-size: 28px;
   font-weight: 600;
-  color: transparent;
   color: #ffffff;
 }
 
@@ -37,44 +34,39 @@
 
 /* Tùy chỉnh style cho input */
 .login-input {
-  border-radius: 100px;
-  padding: 8px;
-}
-/* Style for transparent inputs with white text and white borders */
-.ant-input,
-.ant-input,
-.login-input {
-  background: transparent;
-  color: #ffffff;
-}
-
-.ant-input:focus,
-.login-input:focus {
-  box-shadow: none;
-  border-color: #ffffff;
+  background: transparent !important;
+  color: transparent !important;
+  text-shadow: 0 0 0 white !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  padding: 10px;
+  border-radius: 30px;
+  font-size: 16px;
+  outline: none !important;
 }
 
-/* Style for placeholder text */
-.ant-input::placeholder,
 .login-input::placeholder {
-  color: #ffffff;
-  opacity: 1;
+  color: rgba(255, 255, 255, 0.6) !important;
 }
+
+.login-input:focus {
+  border-color: white !important;
+}
+
 /* Nút Login với kích thước và font chữ đẹp */
 .login-button {
   height: 40px;
   font-size: 16px;
-  border-radius: 4px;
-  background-color: white;
-  color: #000000;
-  border: 1px solid #e0e0e0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 30px;
+  background: white !important;
+  color: black !important;
+  border: none !important;
+  padding: 10px;
+  font-weight: bold;
   transition: all 0.2s ease;
 }
 
 .login-button:hover {
-  background-color: #000000;
-  transform: translateY(1px);
+  opacity: 0.8;
 }
 
 .login-button:active {
@@ -82,47 +74,24 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Canh lề cho checkbox nếu cần */
+/* Canh lề cho checkbox */
 .checkbox-item {
   text-align: left;
 }
 
 .checkbox-item label {
-  color: #ffffff;
-}
-.login-input {
-  background: transparent !important; /* Nền trong suốt */
-  color: transparent !important; /* Chữ nhập vào trong suốt */
-  text-shadow: 0px 0px 0px white; /* Hiển thị chữ bằng shadow */
-  border: 1px solid rgba(255, 255, 255, 0.5) !important; /* Viền trắng mờ */
-  padding: 10px;
-  border-radius: 30px; /* Bo góc giống ảnh */
-  font-size: 16px;
-  outline: none !important; /* Xóa viền khi focus */
-}
-
-.login-input::placeholder {
-  color: rgba(255, 255, 255, 0.6) !important; /* Placeholder màu trắng nhạt */
-}
-
-.login-input:focus {
-  border-color: white !important; /* Khi focus, viền sáng lên */
-}
-
-.login-button {
-  background: white !important;
-  color: black !important;
-  border: none !important;
-  padding: 10px;
-  font-size: 16px;
-  border-radius: 30px;
-  font-weight: bold;
-}
-
-.login-button:hover {
-  opacity: 0.8; /* Hiệu ứng hover */
-}
-
-.checkbox-item label {
   color: white !important;
+}
+
+/* Đảm bảo Ant Design styles không ghi đè */
+.ant-input,
+.ant-input-password {
+  background: transparent !important;
+  color: white !important;
+}
+
+.ant-input:focus,
+.ant-input-password:focus {
+  border-color: white !important;
+  box-shadow: none;
 }
