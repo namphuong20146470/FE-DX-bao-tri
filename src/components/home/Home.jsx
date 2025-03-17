@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
+  Grid,
   Table,
   TableBody,
   TableCell,
@@ -20,36 +21,26 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  Checkbox,
+  ListItemText,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
-import { makeStyles } from "@material-ui/core/styles";
 import QRCode from "react-qr-code";
 
-const useStyles = makeStyles({
-  root: { padding: 24, backgroundColor: "#f5f5f5" },
-  contentContainer: { display: "flex", gap: 24, alignItems: "flex-start" },
-  tableContainer: {
-    flex: 1,
-    boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-    borderRadius: 8,
-    overflow: "hidden",
-    backgroundColor: "#fff",
-  },
-  searchBar: { marginBottom: 24, width: "100%", maxWidth: 500 },
-  tableHeader: { backgroundColor: "#f8f9fa" },
-  tableCell: { padding: "16px 24px" },
-  editButton: { minWidth: 100 },
-});
-
 function Home() {
-  const classes = useStyles();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const [data, setData] = useState([]);
   const [filteredData, setFilteredData] = useState([]);
+  const [paginatedData, setPaginatedData] = useState([]);
+  const [totalPages, setTotalPages] = useState(0);
+
   const [searchId, setSearchId] = useState("");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editFormData, setEditFormData] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1); // Thêm state totalPages
-  const [paginatedData, setPaginatedData] = useState([]); // Thêm state paginatedData
   const [columns, setColumns] = useState([]);
   const [newField, setNewField] = useState("");
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -59,18 +50,23 @@ function Home() {
     error: null,
     success: false,
   });
+
   const fileInputRef = React.useRef(null);
   const ITEMS_PER_PAGE = 10;
 
-  // State cho tính năng lọc
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
   const [filterCriteria, setFilterCriteria] = useState({
-    loai_bao_tri: "",
-    nguyen_nhan_hu_hong: "",
-    ket_qua: "",
+    loai_bao_tri: [],
+    nguyen_nhan_hu_hong: [],
+    ket_qua: [],
     startDate: "",
     endDate: "",
+    mo_ta: [],
   });
+
+  const [loaiBaoTriOptions, setLoaiBaoTriOptions] = useState([]);
+  const [moTaOptions, setMoTaOptions] = useState([]);
+  const [ketQuaOptions, setKetQuaOptions] = useState([]);
 
   useEffect(() => {
     fetchData();
@@ -82,7 +78,13 @@ function Home() {
       const result = await res.json();
       if (result.success) {
         setData(result.data);
-        setFilteredData(result.data); // Khởi tạo filteredData với dữ liệu gốc
+        setFilteredData(result.data);
+        const uniqueLoaiBaoTri = [...new Set(result.data.map((item) => item.loai_bao_tri).filter(Boolean))];
+        const uniqueMoTa = [...new Set(result.data.map((item) => item.mo_ta).filter(Boolean))];
+        const uniqueKetQua = [...new Set(result.data.map((item) => item.ket_qua).filter(Boolean))];
+        setLoaiBaoTriOptions(uniqueLoaiBaoTri);
+        setMoTaOptions(uniqueMoTa);
+        setKetQuaOptions(uniqueKetQua);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -94,7 +96,6 @@ function Home() {
       id_thiet_bi: "TB111",
       ngay_bao_tri: "2025-02-17",
       loai_bao_tri: "Định kỳ",
-      chi_phi: "2",
       nhan_vien_phu_trach: "TNP",
       mo_ta: "Kiểm tra máy bơm",
       ket_qua: "Hoạt động ko tốt",
@@ -181,7 +182,8 @@ function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(rowData),
         });
-        if (!(await res.json()).success) throw new Error("Import failed");
+        const responseData = await res.json();
+        if (!responseData.success) throw new Error("Import failed");
       }
       setImportStatus({ loading: false, error: null, success: true });
       fetchData();
@@ -191,27 +193,23 @@ function Home() {
     }
   };
 
-  // Logic lọc dữ liệu
   useEffect(() => {
     let filtered = [...data];
-
     if (searchId) {
       filtered = filtered.filter((row) =>
         String(row.id_thiet_bi).toLowerCase().includes(searchId.toLowerCase())
       );
     }
-    if (filterCriteria.loai_bao_tri) {
-      filtered = filtered.filter(
-        (row) => row.loai_bao_tri === filterCriteria.loai_bao_tri
+    if (Array.isArray(filterCriteria.loai_bao_tri) && filterCriteria.loai_bao_tri.length > 0) {
+      filtered = filtered.filter((row) =>
+        filterCriteria.loai_bao_tri.includes(row.loai_bao_tri)
       );
     }
-    if (filterCriteria.nguyen_nhan_hu_hong) {
-      filtered = filtered.filter(
-        (row) => row.nguyen_nhan_hu_hong === filterCriteria.nguyen_nhan_hu_hong
-      );
+    if (Array.isArray(filterCriteria.mo_ta) && filterCriteria.mo_ta.length > 0) {
+      filtered = filtered.filter((row) => filterCriteria.mo_ta.includes(row.mo_ta));
     }
-    if (filterCriteria.ket_qua) {
-      filtered = filtered.filter((row) => row.ket_qua === filterCriteria.ket_qua);
+    if (Array.isArray(filterCriteria.ket_qua) && filterCriteria.ket_qua.length > 0) {
+      filtered = filtered.filter((row) => filterCriteria.ket_qua.includes(row.ket_qua));
     }
     if (filterCriteria.startDate) {
       filtered = filtered.filter(
@@ -223,136 +221,237 @@ function Home() {
         (row) => new Date(row.ngay_bao_tri) <= new Date(filterCriteria.endDate)
       );
     }
-
     setFilteredData(filtered);
+    setCurrentPage(1);
     setTotalPages(Math.ceil(filtered.length / ITEMS_PER_PAGE));
-    setCurrentPage(1); // Reset về trang 1 khi lọc
   }, [searchId, filterCriteria, data]);
 
-  // Cập nhật dữ liệu phân trang
   useEffect(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const endIndex = startIndex + ITEMS_PER_PAGE;
     setPaginatedData(filteredData.slice(startIndex, endIndex));
   }, [filteredData, currentPage]);
 
-  // Xử lý lọc
   const handleFilterClick = () => setFilterDialogOpen(true);
   const handleFilterClose = () => setFilterDialogOpen(false);
   const handleFilterApply = () => setFilterDialogOpen(false);
   const handleFilterChange = (e) => {
-    setFilterCriteria((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    if (Array.isArray(filterCriteria[name])) {
+      const newValue = typeof value === "string" ? value.split(",") : value;
+      setFilterCriteria((prev) => ({ ...prev, [name]: newValue }));
+    } else {
+      setFilterCriteria((prev) => ({ ...prev, [name]: value }));
+    }
   };
   const handleFilterClear = () => {
     setFilterCriteria({
-      loai_bao_tri: "",
-      nguyen_nhan_hu_hong: "",
-      ket_qua: "",
+      loai_bao_tri: [],
+      nguyen_nhan_hu_hong: [],
+      ket_qua: [],
       startDate: "",
       endDate: "",
+      mo_ta: [],
     });
-    setSearchId(""); // Xóa tìm kiếm nếu cần
+    setSearchId("");
   };
 
   return (
-    <Box className={classes.root}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+    <Box
+      sx={{
+        p: { xs: 2, sm: 3 },
+        backgroundColor: "#f5f5f5",
+        minHeight: "100vh",
+      }}
+    >
+      {/* Search Bar and Filter Button */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { xs: "stretch", sm: "center" },
+          gap: 2,
+          mb: 3,
+        }}
+      >
         <TextField
           label="Tìm kiếm theo ID Thiết Bị"
           variant="outlined"
           value={searchId}
           onChange={(e) => setSearchId(e.target.value)}
-          className={classes.searchBar}
-          sx={{ backgroundColor: "#fff" }}
+          sx={{
+            flex: 1,
+            maxWidth: { xs: "100%", sm: 500 },
+            backgroundColor: "#fff",
+            "& .MuiInputBase-root": { fontSize: { xs: "0.875rem", sm: "1rem" } },
+          }}
         />
-        <Button variant="outlined" color="primary" onClick={handleFilterClick}>
+        <Button
+          variant="outlined"
+          color="primary"
+          onClick={handleFilterClick}
+          sx={{
+            minWidth: { xs: "100%", sm: 100 },
+            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+            px: 2,
+            py: 1,
+          }}
+        >
           Filter
         </Button>
       </Box>
 
-      {/* Dialog Filter */}
+      {/* Filter Dialog */}
       <Dialog open={filterDialogOpen} onClose={handleFilterClose} maxWidth="sm" fullWidth>
-        <DialogTitle>Filter Options</DialogTitle>
+        <DialogTitle sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}>
+          Filter Options
+        </DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
             <FormControl fullWidth>
-              <InputLabel>Loại Bảo Trì</InputLabel>
+              <InputLabel sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+                Loại Bảo Trì
+              </InputLabel>
               <Select
+                multiple
                 name="loai_bao_tri"
-                value={filterCriteria.loai_bao_tri}
+                value={
+                  Array.isArray(filterCriteria.loai_bao_tri)
+                    ? filterCriteria.loai_bao_tri
+                    : []
+                }
                 onChange={handleFilterChange}
-                label="Loại Bảo Trì"
+                renderValue={(selected) => selected.join(", ")}
+                sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
               >
-                <MenuItem value="">Tất cả</MenuItem>
-                <MenuItem value="Định kỳ">Định kỳ</MenuItem>
-                <MenuItem value="Đột xuất">Đột xuất</MenuItem>
+                {loaiBaoTriOptions.map((type) => (
+                  <MenuItem
+                    key={type}
+                    value={type}
+                    sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                  >
+                    <Checkbox
+                      checked={
+                        Array.isArray(filterCriteria.loai_bao_tri) &&
+                        filterCriteria.loai_bao_tri.indexOf(type) > -1
+                      }
+                      size={isMobile ? "small" : "medium"}
+                    />
+                    <ListItemText primary={type} />
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
-
             <FormControl fullWidth>
-              <InputLabel>Nguyên Nhân Hư Hỏng</InputLabel>
+              <InputLabel sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+                Mô Tả
+              </InputLabel>
               <Select
-                name="nguyen_nhan_hu_hong"
-                value={filterCriteria.nguyen_nhan_hu_hong}
+                multiple
+                name="mo_ta"
+                value={Array.isArray(filterCriteria.mo_ta) ? filterCriteria.mo_ta : []}
                 onChange={handleFilterChange}
-                label="Nguyên Nhân Hư Hỏng"
+                renderValue={(selected) => selected.join(", ")}
+                sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
               >
-                <MenuItem value="">Tất cả</MenuItem>
-                <MenuItem value="Lỗi máy móc">Lỗi máy móc</MenuItem>
-                <MenuItem value="Lỗi hệ thống">Lỗi hệ thống</MenuItem>
+                {moTaOptions.map((desc) => (
+                  <MenuItem
+                    key={desc}
+                    value={desc}
+                    sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                  >
+                    <Checkbox
+                      checked={
+                        Array.isArray(filterCriteria.mo_ta) &&
+                        filterCriteria.mo_ta.indexOf(desc) > -1
+                      }
+                      size={isMobile ? "small" : "medium"}
+                    />
+                    <ListItemText primary={desc} />
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
-
             <FormControl fullWidth>
-              <InputLabel>Kết Quả Bảo Trì</InputLabel>
+              <InputLabel sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+                Kết Quả Bảo Trì
+              </InputLabel>
               <Select
+                multiple
                 name="ket_qua"
-                value={filterCriteria.ket_qua}
+                value={Array.isArray(filterCriteria.ket_qua) ? filterCriteria.ket_qua : []}
                 onChange={handleFilterChange}
-                label="Kết Quả Bảo Trì"
+                renderValue={(selected) => selected.join(", ")}
+                sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
               >
-                <MenuItem value="">Tất cả</MenuItem>
-                <MenuItem value="Hoạt động tốt">Hoạt động tốt</MenuItem>
-                <MenuItem value="Không hoạt động">Không hoạt động</MenuItem>
+                {ketQuaOptions.map((result) => (
+                  <MenuItem
+                    key={result}
+                    value={result}
+                    sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                  >
+                    <Checkbox
+                      checked={
+                        Array.isArray(filterCriteria.ket_qua) &&
+                        filterCriteria.ket_qua.indexOf(result) > -1
+                      }
+                      size={isMobile ? "small" : "medium"}
+                    />
+                    <ListItemText primary={result} />
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
-
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <TextField
-                label="Ngày Bắt Đầu"
-                type="date"
-                name="startDate"
-                value={filterCriteria.startDate}
-                onChange={handleFilterChange}
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-              />
-              <TextField
-                label="Ngày Kết Thúc"
-                type="date"
-                name="endDate"
-                value={filterCriteria.endDate}
-                onChange={handleFilterChange}
-                InputLabelProps={{ shrink: true }}
-                fullWidth
-              />
-            </Box>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleFilterClear}>Xóa bộ lọc</Button>
-          <Button variant="contained" onClick={handleFilterApply}>
+          <Button
+            onClick={handleFilterClear}
+            size={isMobile ? "small" : "medium"}
+            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+          >
+            Xóa bộ lọc
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleFilterApply}
+            size={isMobile ? "small" : "medium"}
+            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+          >
             Áp dụng
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2, gap: 2 }}>
-        <Button variant="contained" color="primary" onClick={handleImportClick}>
+      {/* Import and Export Buttons */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: { xs: "center", sm: "flex-end" },
+          gap: 2,
+          mb: 3,
+          flexWrap: "wrap",
+        }}
+      >
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleImportClick}
+          sx={{
+            minWidth: { xs: 90, sm: 100 },
+            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+            px: 2,
+            py: 1,
+            backgroundColor: "#1976d2",
+            "&:hover": { backgroundColor: "#1565c0" },
+          }}
+        >
           Import
         </Button>
         <Dialog open={importDialogOpen} onClose={handleImportClose} maxWidth="sm" fullWidth>
-          <DialogTitle>Import CSV File</DialogTitle>
+          <DialogTitle sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}>
+            Import CSV File
+          </DialogTitle>
           <DialogContent>
             <Box sx={{ py: 2 }}>
               <input
@@ -364,31 +463,58 @@ function Home() {
                 id="contained-button-file"
               />
               <label htmlFor="contained-button-file">
-                <Button variant="contained" component="span">
+                <Button
+                  variant="contained"
+                  component="span"
+                  fullWidth
+                  sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" }, py: 1 }}
+                >
                   Select CSV File
                 </Button>
               </label>
               {selectedFile && (
-                <Typography sx={{ mt: 2 }}>Selected file: {selectedFile.name}</Typography>
+                <Typography sx={{ mt: 2, fontSize: { xs: "0.75rem", sm: "1rem" } }}>
+                  Selected file: {selectedFile.name}
+                </Typography>
               )}
               {importStatus.loading && (
-                <Typography sx={{ mt: 2, color: "text.secondary" }}>Importing...</Typography>
+                <Typography
+                  sx={{ mt: 2, color: "text.secondary", fontSize: { xs: "0.75rem", sm: "1rem" } }}
+                >
+                  Importing...
+                </Typography>
               )}
               {importStatus.error && (
-                <Typography sx={{ mt: 2, color: "error.main" }}>{importStatus.error}</Typography>
+                <Typography
+                  sx={{ mt: 2, color: "error.main", fontSize: { xs: "0.75rem", sm: "1rem" } }}
+                >
+                  {importStatus.error}
+                </Typography>
               )}
               {importStatus.success && (
-                <Typography sx={{ mt: 2, color: "success.main" }}>Import completed!</Typography>
+                <Typography
+                  sx={{ mt: 2, color: "success.main", fontSize: { xs: "0.75rem", sm: "1rem" } }}
+                >
+                  Import completed!
+                </Typography>
               )}
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleImportClose}>Cancel</Button>
+            <Button
+              onClick={handleImportClose}
+              size={isMobile ? "small" : "medium"}
+              sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+            >
+              Cancel
+            </Button>
             <Button
               onClick={handleImport}
               variant="contained"
               color="primary"
               disabled={!selectedFile || importStatus.loading}
+              size={isMobile ? "small" : "medium"}
+              sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
             >
               {importStatus.loading ? "Importing..." : "Import"}
             </Button>
@@ -429,127 +555,248 @@ function Home() {
             ].join("\n");
             const link = document.createElement("a");
             link.href = encodeURI("data:text/csv;charset=utf-8," + csvContent);
-            link.download = `bao-tri-thiet-bi-${new Date()
-              .toISOString()
-              .slice(0, 10)}.csv`;
+            link.download = `bao-tri-thiet-bi-${new Date().toISOString().slice(0, 10)}.csv`;
             link.click();
+          }}
+          sx={{
+            minWidth: { xs: 90, sm: 100 },
+            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+            px: 2,
+            py: 1,
+            backgroundColor: "#ab47bc",
+            "&:hover": { backgroundColor: "#9c27b0" },
           }}
         >
           Export
         </Button>
       </Box>
 
-      <Box className={classes.contentContainer}>
-        <Paper className={classes.tableContainer}>
-          <Typography
-            variant="h5"
-            align="center"
-            sx={{ py: 3, borderBottom: "1px solid #e0e0e0" }}
+      {/* Main Content with Grid */}
+      <Grid container spacing={2}>
+        <Grid item xs={12}>
+          <Paper
+            sx={{
+              boxShadow: { xs: "none", sm: "0 4px 6px rgba(0,0,0,0.1)" },
+              borderRadius: { xs: 0, sm: 2 },
+              overflow: "auto",
+              "&::-webkit-scrollbar": {
+                height: 8,
+              },
+              "&::-webkit-scrollbar-thumb": {
+                backgroundColor: "#888",
+                borderRadius: 4,
+              },
+            }}
           >
-            Danh sách bảo trì thiết bị
-          </Typography>
-          <TableContainer>
-            <Table>
-              <TableHead className={classes.tableHeader}>
-                <TableRow>
-                  {[
-                    "ID Bảo Trì",
-                    "ID Thiết Bị",
-                    "Ngày Bảo Trì",
-                    "Loại Bảo Trì",
-                    "Khách Hàng",
-                    "Khu Vực",
-                    "Nhân Viên Phụ Trách",
-                    "Mô Tả",
-                    "Kết Quả",
-                    "Chỉnh Sửa",
-                    ...columns,
-                    "QR Code",
-                  ].map((col) => (
-                    <TableCell key={col} className={classes.tableCell}>
-                      <strong>{col}</strong>
-                    </TableCell>
-                  ))}
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {paginatedData.length ? (
-                  paginatedData.map((row) => (
-                    <TableRow
-                      key={row.id_bao_tri}
-                      hover
-                      sx={{ "&:hover": { backgroundColor: "#f5f5f5" } }}
-                    >
-                      <TableCell className={classes.tableCell}>
-                        {row.id_bao_tri}
+            <Typography
+              variant="h5"
+              align="center"
+              sx={{
+                py: 3,
+                borderBottom: "1px solid #e0e0e0",
+                fontSize: { xs: "1.25rem", sm: "1.5rem" },
+              }}
+            >
+              Danh sách bảo trì thiết bị
+            </Typography>
+            <TableContainer>
+              <Table>
+                <TableHead sx={{ backgroundColor: "#f8f9fa" }}>
+                  <TableRow>
+                    {[
+                      "ID Bảo Trì",
+                      "ID Thiết Bị",
+                      "Ngày Bảo Trì",
+                      "Loại Bảo Trì",
+                      "Khách Hàng",
+                      "Khu Vực",
+                      "Nhân Viên Phụ Trách",
+                      "Mô Tả",
+                      "Kết Quả",
+                      "Chỉnh Sửa",
+                      ...columns,
+                      "QR Code",
+                    ].map((col) => (
+                      <TableCell
+                        key={col}
+                        sx={{
+                          padding: { xs: "8px 12px", sm: "16px 24px" },
+                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        <strong>{col}</strong>
                       </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        {row.id_thiet_bi}
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        {row.ngay_bao_tri}
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        {row.loai_bao_tri}
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        {row.khach_hang}
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        {row.dia_diem}
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        {row.nhan_vien_phu_trach}
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        {row.mo_ta}
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        {row.ket_qua}
-                      </TableCell>
-                      <TableCell className={classes.tableCell}>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={() => handleEditClick(row)}
-                          className={classes.editButton}
+                    ))}
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {paginatedData.length ? (
+                    paginatedData.map((row) => (
+                      <TableRow
+                        key={row.id_bao_tri}
+                        hover
+                        sx={{ "&:hover": { backgroundColor: "#f5f5f5" } }}
+                      >
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
                         >
-                          Chỉnh sửa
-                        </Button>
-                      </TableCell>
-                      {columns.map((col) => (
-                        <TableCell key={col} className={classes.tableCell}>
-                          {row[col]}
+                          {row.id_bao_tri}
                         </TableCell>
-                      ))}
-                      <TableCell className={classes.tableCell}>
-                        <QRCode
-                          value={`https://ebaotri.hoangphucthanh.vn/index.php?id=${row.id_thiet_bi}/${encodeURIComponent(
-                            row.dia_diem
-                          )}`}
-                          size={64}
-                          level="L"
-                        />
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.id_thiet_bi}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.ngay_bao_tri}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.loai_bao_tri}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.khach_hang}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.dia_diem}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.nhan_vien_phu_trach}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.mo_ta}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.ket_qua}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          <Button
+                            variant="contained"
+                            color="primary"
+                            onClick={() => handleEditClick(row)}
+                            sx={{
+                              minWidth: { xs: 70, sm: 100 },
+                              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                              px: { xs: 1, sm: 2 },
+                            }}
+                          >
+                            Chỉnh sửa
+                          </Button>
+                        </TableCell>
+                        {columns.map((col) => (
+                          <TableCell
+                            key={col}
+                            sx={{
+                              padding: { xs: "8px 12px", sm: "16px 24px" },
+                              fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {row[col]}
+                          </TableCell>
+                        ))}
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          <QRCode
+                            value={`https://ebaotri.hoangphucthanh.vn/index.php?id=${row.id_thiet_bi}/${encodeURIComponent(
+                              row.dia_diem
+                            )}`}
+                            size={isMobile ? 48 : 64}
+                            level="L"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell
+                        colSpan={10 + columns.length}
+                        align="center"
+                        sx={{
+                          padding: { xs: "8px 12px", sm: "16px 24px" },
+                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                        }}
+                      >
+                        Không có dữ liệu
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={10 + columns.length}
-                      align="center"
-                      className={classes.tableCell}
-                    >
-                      Không có dữ liệu
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </Paper>
-      </Box>
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
+        </Grid>
+      </Grid>
+
+      {/* Pagination */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          mt: 3,
+        }}
+      >
         <Pagination
           count={totalPages}
           page={currentPage}
@@ -558,60 +805,104 @@ function Home() {
             window.scrollTo({ top: 0, behavior: "smooth" });
           }}
           color="primary"
+          size={isMobile ? "small" : "medium"}
         />
       </Box>
+
+      {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onClose={handleEditClose} maxWidth="md" fullWidth>
-        <DialogTitle>Chỉnh sửa thông tin bảo trì</DialogTitle>
+        <DialogTitle sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}>
+          Chỉnh sửa thông tin bảo trì
+        </DialogTitle>
         <DialogContent>
-          <Box sx={{ display: "grid", gap: 2, py: 2 }}>
+          <Grid container spacing={2} sx={{ py: 2 }}>
             {[
               "id_thiet_bi:ID Thiết Bị",
               "ngay_bao_tri:Ngày Bảo Trì:date",
               "loai_bao_tri:Loại Bảo Trì",
-              "chi_phi:Chi Phí:number",
+              "dia_diem:Khu Vực:text", // Thêm trường "Khu vực" thay cho "Chi phí"
               "nhan_vien_phu_trach:Nhân Viên Phụ Trách",
               "mo_ta:Mô Tả::3",
               "ket_qua:Kết Quả::3",
             ].map((field) => {
               const [name, label, type, rows] = field.split(":");
               return (
-                <TextField
-                  key={name}
-                  name={name}
-                  label={label}
-                  type={type || "text"}
-                  value={editFormData[name] || ""}
-                  onChange={handleInputChange}
-                  fullWidth
-                  multiline={!!rows}
-                  rows={rows}
-                  InputLabelProps={type === "date" ? { shrink: true } : undefined}
-                />
+                <Grid item xs={12} sm={6} key={name}>
+                  <TextField
+                    name={name}
+                    label={label}
+                    type={type || "text"}
+                    value={editFormData[name] || ""}
+                    onChange={handleInputChange}
+                    fullWidth
+                    multiline={!!rows}
+                    rows={rows}
+                    InputLabelProps={type === "date" ? { shrink: true } : undefined}
+                    sx={{
+                      "& .MuiInputBase-root": { fontSize: { xs: "0.875rem", sm: "1rem" } },
+                    }}
+                  />
+                </Grid>
               );
             })}
-          </Box>
+          </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleEditClose}>Hủy</Button>
-          <Button onClick={handleSave} variant="contained" color="primary">
+          <Button
+            onClick={handleEditClose}
+            size={isMobile ? "small" : "medium"}
+            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+          >
+            Hủy
+          </Button>
+          <Button
+            onClick={handleSave}
+            variant="contained"
+            color="primary"
+            size={isMobile ? "small" : "medium"}
+            sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}
+          >
             Lưu thay đổi
           </Button>
         </DialogActions>
       </Dialog>
-      <Box sx={{ mt: 2 }}>
+
+      {/* Add New Field */}
+      <Box
+        sx={{
+          mt: 3,
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 2,
+        }}
+      >
         <TextField
           label="Nhập tên trường mới"
           variant="outlined"
           value={newField}
           onChange={(e) => setNewField(e.target.value)}
-          fullWidth
+          sx={{
+            flex: 1,
+            "& .MuiInputBase-root": { fontSize: { xs: "0.875rem", sm: "1rem" } },
+          }}
         />
-        <Button variant="contained" color="primary" onClick={handleAddColumn} sx={{ mt: 1 }}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleAddColumn}
+          sx={{
+            minWidth: { xs: "100%", sm: 150 },
+            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+            py: 1,
+          }}
+        >
           Thêm trường
         </Button>
       </Box>
     </Box>
   );
 }
+
+
 
 export default Home;

@@ -4,8 +4,8 @@ import { Route, Routes, Navigate } from 'react-router-dom';
 import Loading from './components/common/Loading';
 import MainAppRoutes from './routes/MainAppRoutes';
 import Login from './components/login/Login';
-import Home from './components/home/Home';
-
+import Home from './components/Home/Home';
+// import Home from './components/home/Home';
 // Kiểm tra xem người dùng đã đăng nhập chưa
 function ProtectedRoute({ children }) {
   const token = localStorage.getItem('token');

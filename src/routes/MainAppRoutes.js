@@ -4,7 +4,8 @@ import { Route, Routes } from "react-router-dom";
 import LayoutApp from "../components/layout/Layout";
 import Loading from "../components/common/Loading";
 
-const Home = lazy(() => import("../components/home/Home"));
+const Home = lazy(() => import("../components/Home/Home"));
+// const Home = lazy(() => import("../components/home/Home"));
 const Room = lazy(() => import("../components/room/Rooms"));
 const DetailRoom = lazy(() => import("../components/room/detailRoom/DetailRoom"));
 const Profile = lazy(() => import("../components/profile/Profile"));
