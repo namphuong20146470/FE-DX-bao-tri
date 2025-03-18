@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
-  Grid,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
@@ -37,6 +36,8 @@ function Home() {
     success: false,
   });
 
+  const [selectedIds, setSelectedIds] = useState([]); // New state for selected id_thiet_bi
+
   const fileInputRef = React.useRef(null);
 
   const [filterDialogOpen, setFilterDialogOpen] = useState(false);
@@ -46,7 +47,7 @@ function Home() {
     ket_qua: [],
     startDate: "",
     endDate: "",
-    mo_ta: [],
+    mo_ta_cong_viec: [], // Updated to match new field name
   });
 
   const [loaiBaoTriOptions, setLoaiBaoTriOptions] = useState([]);
@@ -65,27 +66,37 @@ function Home() {
         setData(result.data);
         setFilteredData(result.data);
         const uniqueLoaiBaoTri = [...new Set(result.data.map((item) => item.loai_bao_tri).filter(Boolean))];
-        const uniqueMoTa = [...new Set(result.data.map((item) => item.mo_ta).filter(Boolean))];
+        const uniqueMoTa = [...new Set(result.data.map((item) => item.mo_ta_cong_viec).filter(Boolean))];
         const uniqueKetQua = [...new Set(result.data.map((item) => item.ket_qua).filter(Boolean))];
+        const uniqueNguyenNhanHuHong = [...new Set(result.data.map((item) => item.nguyen_nhan_hu_hong).filter(Boolean))]; // Added
         setLoaiBaoTriOptions(uniqueLoaiBaoTri);
         setMoTaOptions(uniqueMoTa);
         setKetQuaOptions(uniqueKetQua);
+        setNguyenNhanHuHongOptions(uniqueNguyenNhanHuHong); // Added
       }
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   };
+  
+  // Add new state for nguyenNhanHuHongOptions
+  const [nguyenNhanHuHongOptions, setNguyenNhanHuHongOptions] = useState([]);
 
   const handleAddColumn = async () => {
     const dataToSend = {
       id_thiet_bi: "TB111",
-      ngay_bao_tri: "2025-02-17",
+      ngay_bat_dau: "2025-02-17", // Updated field
+      ngay_hoan_thanh: "2025-02-17", // Updated field
       loai_bao_tri: "Định kỳ",
-      nhan_vien_phu_trach: "TNP",
-      mo_ta: "Kiểm tra máy bơm",
+      nguoi_phu_trach: "TNP", // Updated field
+      mo_ta_cong_viec: "Kiểm tra máy bơm", // Updated field
+      nguyen_nhan_hu_hong: "Không có", // Updated field
       ket_qua: "Hoạt động ko tốt",
+      lich_tiep_theo: "2025-03-17", // Updated field
+      trang_thai: "Hoàn thành", // Updated field
       khach_hang: "TNP",
-      dia_diem: "TPHCM",
+      vi_tri_lap_dat: "TPHCM", // Updated field
+      hinh_anh: "", // Updated field
       [newField]: "",
     };
     try {
@@ -105,6 +116,14 @@ function Home() {
     } catch (error) {
       console.error("Error adding column:", error);
     }
+  };
+
+  const handleCheckboxChange = (id_thiet_bi) => {
+    setSelectedIds((prev) =>
+      prev.includes(id_thiet_bi)
+        ? prev.filter((id) => id !== id_thiet_bi)
+        : [...prev, id_thiet_bi]
+    );
   };
 
   const handleEditClick = (row) => {
@@ -162,13 +181,35 @@ function Home() {
         const rowData = Object.fromEntries(
           headers.map((h, i) => [h.trim(), values[i]?.trim().replace(/^"|"$/g, "") || ""])
         );
+        // Map CSV headers to bao_tri_1 table fields
+        const mappedData = {
+          id_bao_tri: rowData["ID Bảo Trì"] || "0",
+          id_thiet_bi: rowData["ID Thiết Bị"] || "0",
+          loai_thiet_bi: rowData["Loại Thiết Bị"] || "",
+          khach_hang: rowData["Khách Hàng"] || "",
+          vi_tri_lap_dat: rowData["Vị Trí Lắp Đặt"] || "",
+          ngay_bat_dau: rowData["Ngày Bắt Đầu"] || "",
+          ngay_hoan_thanh: rowData["Ngày Hoàn Thành"] || "",
+          loai_bao_tri: rowData["Loại Bảo Trì"] || "",
+          nguoi_phu_trach: rowData["Người Phụ Trách"] || "",
+          mo_ta_cong_viec: rowData["Mô Tả Công Việc"] || "",
+          nguyen_nhan_hu_hong: rowData["Nguyên Nhân Hư Hỏng"] || "",
+          ket_qua: rowData["Kết Quả"] || "",
+          lich_tiep_theo: rowData["Lịch Tiếp Theo"] || "",
+          trang_thai: rowData["Trạng Thái"] || "",
+          hinh_anh: rowData["Hình Ảnh"] || "",
+          // Include dynamic columns if they exist
+          ...Object.fromEntries(
+            columns.map((col) => [col, rowData[col] || ""])
+          ),
+        };
         const res = await fetch("https://ebaotri.hoangphucthanh.vn/index.php?add", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(rowData),
+          body: JSON.stringify(mappedData),
         });
         const responseData = await res.json();
-        if (!responseData.success) throw new Error("Import failed");
+        if (!responseData.success) throw new Error("Import failed: " + responseData.message);
       }
       setImportStatus({ loading: false, error: null, success: true });
       fetchData();
@@ -190,20 +231,20 @@ function Home() {
         filterCriteria.loai_bao_tri.includes(row.loai_bao_tri)
       );
     }
-    if (Array.isArray(filterCriteria.mo_ta) && filterCriteria.mo_ta.length > 0) {
-      filtered = filtered.filter((row) => filterCriteria.mo_ta.includes(row.mo_ta));
+    if (Array.isArray(filterCriteria.mo_ta_cong_viec) && filterCriteria.mo_ta_cong_viec.length > 0) {
+      filtered = filtered.filter((row) => filterCriteria.mo_ta_cong_viec.includes(row.mo_ta_cong_viec));
     }
     if (Array.isArray(filterCriteria.ket_qua) && filterCriteria.ket_qua.length > 0) {
       filtered = filtered.filter((row) => filterCriteria.ket_qua.includes(row.ket_qua));
     }
     if (filterCriteria.startDate) {
       filtered = filtered.filter(
-        (row) => new Date(row.ngay_bao_tri) >= new Date(filterCriteria.startDate)
+        (row) => new Date(row.ngay_bat_dau) >= new Date(filterCriteria.startDate) // Updated field
       );
     }
     if (filterCriteria.endDate) {
       filtered = filtered.filter(
-        (row) => new Date(row.ngay_bao_tri) <= new Date(filterCriteria.endDate)
+        (row) => new Date(row.ngay_hoan_thanh) <= new Date(filterCriteria.endDate) // Updated field
       );
     }
     setFilteredData(filtered);
@@ -236,7 +277,7 @@ function Home() {
       ket_qua: [],
       startDate: "",
       endDate: "",
-      mo_ta: [],
+      mo_ta_cong_viec: [],
     });
     setSearchId("");
   };
@@ -255,18 +296,19 @@ function Home() {
         handleFilterClick={handleFilterClick}
         isMobile={isMobile}
       />
-      <FilterDialog
-        filterDialogOpen={filterDialogOpen}
-        handleFilterClose={handleFilterClose}
-        filterCriteria={filterCriteria}
-        handleFilterChange={handleFilterChange}
-        handleFilterApply={handleFilterApply}
-        handleFilterClear={handleFilterClear}
-        loaiBaoTriOptions={loaiBaoTriOptions}
-        moTaOptions={moTaOptions}
-        ketQuaOptions={ketQuaOptions}
-        isMobile={isMobile}
-      />
+<FilterDialog
+  filterDialogOpen={filterDialogOpen}
+  handleFilterClose={handleFilterClose}
+  filterCriteria={filterCriteria}
+  handleFilterChange={handleFilterChange}
+  handleFilterApply={handleFilterApply}
+  handleFilterClear={handleFilterClear}
+  loaiBaoTriOptions={loaiBaoTriOptions}
+  moTaOptions={moTaOptions}
+  ketQuaOptions={ketQuaOptions}
+  nguyenNhanHuHongOptions={nguyenNhanHuHongOptions} // Added
+  isMobile={isMobile}
+/>
       <ImportDialog
         importDialogOpen={importDialogOpen}
         handleImportClose={handleImportClose}
@@ -281,6 +323,7 @@ function Home() {
         columns={columns}
         isMobile={isMobile}
         handleImportClick={handleImportClick}
+        selectedIds={selectedIds} // Pass selectedIds to ImportDialog
       />
       <TableSection
         paginatedData={paginatedData}
@@ -290,6 +333,8 @@ function Home() {
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
         isMobile={isMobile}
+        selectedIds={selectedIds} // Pass selectedIds to TableSection
+        handleCheckboxChange={handleCheckboxChange} // Pass handler to TableSection
       />
       <EditDialog
         editDialogOpen={editDialogOpen}

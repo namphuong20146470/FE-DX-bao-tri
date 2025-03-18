@@ -12,6 +12,7 @@ import {
   TableBody,
   Button,
   Pagination,
+  Checkbox,
 } from "@mui/material";
 import QRCode from "react-qr-code";
 
@@ -23,6 +24,8 @@ function TableSection({
   currentPage,
   setCurrentPage,
   isMobile,
+  selectedIds, // New prop to track selected id_thiet_bi values
+  handleCheckboxChange, // New prop to handle checkbox state changes
 }) {
   return (
     <>
@@ -58,15 +61,23 @@ function TableSection({
                 <TableHead sx={{ backgroundColor: "#f8f9fa" }}>
                   <TableRow>
                     {[
+                      "Chọn",
                       "ID Bảo Trì",
                       "ID Thiết Bị",
-                      "Ngày Bảo Trì",
-                      "Loại Bảo Trì",
+                      "ID SERIAL",
+                      "Loại Thiết Bị",
                       "Khách Hàng",
-                      "Khu Vực",
-                      "Nhân Viên Phụ Trách",
-                      "Mô Tả",
+                      "Vị Trí Lắp Đặt",
+                      "Ngày Bắt Đầu",
+                      "Ngày Hoàn Thành",
+                      "Loại Bảo Trì",
+                      "Người Phụ Trách",
+                      "Mô Tả Công Việc",
+                      "Nguyên Nhân Hư Hỏng",
                       "Kết Quả",
+                      "Lịch Tiếp Theo",
+                      "Trạng Thái",
+                      "Hình Ảnh",
                       "Chỉnh Sửa",
                       ...columns,
                       "QR Code",
@@ -88,10 +99,24 @@ function TableSection({
                   {paginatedData.length ? (
                     paginatedData.map((row) => (
                       <TableRow
-                        key={row.id_bao_tri}
+                        key={row.STT}
                         hover
                         sx={{ "&:hover": { backgroundColor: "#f5f5f5" } }}
                       >
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          <Checkbox
+                            checked={selectedIds.includes(row.id_thiet_bi)}
+                            onChange={() => handleCheckboxChange(row.id_thiet_bi)}
+                            color="primary"
+                            size={isMobile ? "small" : "medium"}
+                          />
+                        </TableCell>
                         <TableCell
                           sx={{
                             padding: { xs: "8px 12px", sm: "16px 24px" },
@@ -117,7 +142,7 @@ function TableSection({
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {row.ngay_bao_tri}
+                          {row.id_seri || "N/A"}
                         </TableCell>
                         <TableCell
                           sx={{
@@ -126,7 +151,7 @@ function TableSection({
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {row.loai_bao_tri}
+                          {row.loai_thiet_bi}
                         </TableCell>
                         <TableCell
                           sx={{
@@ -144,7 +169,7 @@ function TableSection({
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {row.dia_diem}
+                          {row.vi_tri_lap_dat}
                         </TableCell>
                         <TableCell
                           sx={{
@@ -153,7 +178,7 @@ function TableSection({
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {row.nhan_vien_phu_trach}
+                          {row.ngay_bat_dau}
                         </TableCell>
                         <TableCell
                           sx={{
@@ -162,7 +187,43 @@ function TableSection({
                             whiteSpace: "nowrap",
                           }}
                         >
-                          {row.mo_ta}
+                          {row.ngay_hoan_thanh}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.loai_bao_tri}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.nguoi_phu_trach}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.mo_ta_cong_viec}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.nguyen_nhan_hu_hong}
                         </TableCell>
                         <TableCell
                           sx={{
@@ -172,6 +233,33 @@ function TableSection({
                           }}
                         >
                           {row.ket_qua}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.lich_tiep_theo}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.trang_thai}
+                        </TableCell>
+                        <TableCell
+                          sx={{
+                            padding: { xs: "8px 12px", sm: "16px 24px" },
+                            fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {row.hinh_anh || "N/A"}
                         </TableCell>
                         <TableCell
                           sx={{
@@ -202,7 +290,7 @@ function TableSection({
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {row[col]}
+                            {row[col] || "N/A"}
                           </TableCell>
                         ))}
                         <TableCell
@@ -214,8 +302,8 @@ function TableSection({
                         >
                           <QRCode
                             value={`https://ebaotri.hoangphucthanh.vn/index.php?id=${row.id_thiet_bi}/${encodeURIComponent(
-                              row.dia_diem
-                            )}`}
+                              row.vi_tri_lap_dat || ""
+                            )}/id_seri=${row.id_seri || ""}`}
                             size={isMobile ? 48 : 64}
                             level="L"
                           />
@@ -225,7 +313,7 @@ function TableSection({
                   ) : (
                     <TableRow>
                       <TableCell
-                        colSpan={10 + columns.length}
+                        colSpan={18 + columns.length}
                         align="center"
                         sx={{
                           padding: { xs: "8px 12px", sm: "16px 24px" },

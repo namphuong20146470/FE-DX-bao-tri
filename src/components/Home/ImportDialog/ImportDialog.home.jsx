@@ -23,6 +23,7 @@ function ImportDialog({
   columns,
   isMobile,
   handleImportClick,
+  selectedIds, // Quay lại sử dụng selectedIds
 }) {
   return (
     <Box
@@ -125,34 +126,57 @@ function ImportDialog({
         variant="contained"
         color="secondary"
         onClick={() => {
+          if (!selectedIds || selectedIds.length === 0) {
+            alert("Please select at least one device to export.");
+            return;
+          }
+
           const headers = [
+            "STT",
             "ID Bảo Trì",
             "ID Thiết Bị",
-            "Ngày Bảo Trì",
-            "Loại Bảo Trì",
+            "ID Số Seri",
+            "Loại Thiết Bị",
             "Khách Hàng",
-            "Địa Điểm",
-            "Nhân Viên Phụ Trách",
-            "Mô Tả",
+            "Vị Trí Lắp Đặt",
+            "Ngày Bắt Đầu",
+            "Ngày Hoàn Thành",
+            "Loại Bảo Trì",
+            "Người Phụ Trách",
+            "Mô Tả Công Việc",
+            "Nguyên Nhân Hư Hỏng",
             "Kết Quả",
+            "Lịch Tiếp Theo",
+            "Trạng Thái",
+            "Hình Ảnh",
             ...columns,
           ];
           const csvContent = [
             headers.join(","),
-            ...filteredData.map((row) =>
-              [
-                row.id_bao_tri,
-                row.id_thiet_bi,
-                row.ngay_bao_tri,
-                row.loai_bao_tri,
-                row.khach_hang,
-                row.dia_diem,
-                row.nhan_vien_phu_trach,
-                `"${(row.mo_ta || "").replace(/"/g, '""')}"`,
-                `"${(row.ket_qua || "").replace(/"/g, '""')}"`,
-                ...columns.map((col) => `"${(row[col] || "").replace(/"/g, '""')}"`),
-              ].join(",")
-            ),
+            ...filteredData
+              .filter((row) => selectedIds.includes(row.id_thiet_bi)) // Lọc các bản ghi dựa trên selectedIds
+              .map((row) =>
+                [
+                  row.STT || "",
+                  row.id_bao_tri || "",
+                  row.id_thiet_bi || "",
+                  row.id_seri || "",
+                  row.loai_thiet_bi || "",
+                  row.khach_hang || "",
+                  row.vi_tri_lap_dat || "",
+                  row.ngay_bat_dau || "",
+                  row.ngay_hoan_thanh || "",
+                  row.loai_bao_tri || "",
+                  row.nguoi_phu_trach || "",
+                  `"${(row.mo_ta_cong_viec || "").replace(/"/g, '""')}"`,
+                  `"${(row.nguyen_nhan_hu_hong || "").replace(/"/g, '""')}"`,
+                  `"${(row.ket_qua || "").replace(/"/g, '""')}"`,
+                  row.lich_tiep_theo || "",
+                  row.trang_thai || "",
+                  row.hinh_anh || "",
+                  ...columns.map((col) => `"${(row[col] || "").replace(/"/g, '""')}"`),
+                ].join(",")
+              ),
           ].join("\n");
           const link = document.createElement("a");
           link.href = encodeURI("data:text/csv;charset=utf-8," + csvContent);

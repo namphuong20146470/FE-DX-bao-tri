@@ -26,13 +26,22 @@ function EditDialog({
       <DialogContent>
         <Grid container spacing={2} sx={{ py: 2 }}>
           {[
+            "id_bao_tri:ID Bảo Trì", // Read-only field
             "id_thiet_bi:ID Thiết Bị",
-            "ngay_bao_tri:Ngày Bảo Trì:date",
+            "id_seri:ID Serial", // Thêm trường id_seri vào form
+            "loai_thiet_bi:Loại Thiết Bị",
+            "khach_hang:Khách Hàng",
+            "vi_tri_lap_dat:Vị Trí Lắp Đặt",
+            "ngay_bat_dau:Ngày Bắt Đầu:date",
+            "ngay_hoan_thanh:Ngày Hoàn Thành:date",
             "loai_bao_tri:Loại Bảo Trì",
-            "dia_diem:Khu Vực:text",
-            "nhan_vien_phu_trach:Nhân Viên Phụ Trách",
-            "mo_ta:Mô Tả::3",
+            "nguoi_phu_trach:Người Phụ Trách",
+            "mo_ta_cong_viec:Mô Tả Công Việc::3",
+            "nguyen_nhan_hu_hong:Nguyên Nhân Hư Hỏng::3",
             "ket_qua:Kết Quả::3",
+            "lich_tiep_theo:Lịch Tiếp Theo:date",
+            "trang_thai:Trạng Thái",
+            "hinh_anh:Hình Ảnh::3",
           ].map((field) => {
             const [name, label, type, rows] = field.split(":");
             return (
@@ -45,11 +54,17 @@ function EditDialog({
                   onChange={handleInputChange}
                   fullWidth
                   multiline={!!rows}
-                  rows={rows}
+                  rows={rows ? parseInt(rows) : undefined}
                   InputLabelProps={type === "date" ? { shrink: true } : undefined}
                   sx={{
                     "& .MuiInputBase-root": { fontSize: { xs: "0.875rem", sm: "1rem" } },
                   }}
+                  // Làm cho id_bao_tri không thể chỉnh sửa (read-only)
+                  InputProps={
+                    name === "id_bao_tri"
+                      ? { readOnly: true }
+                      : undefined
+                  }
                 />
               </Grid>
             );

@@ -12,6 +12,7 @@ import {
   Checkbox,
   ListItemText,
   Button,
+  TextField,
 } from "@mui/material";
 
 function FilterDialog({
@@ -24,6 +25,7 @@ function FilterDialog({
   loaiBaoTriOptions,
   moTaOptions,
   ketQuaOptions,
+  nguyenNhanHuHongOptions, // New prop for nguyen_nhan_hu_hong options
   isMobile,
 }) {
   return (
@@ -69,12 +71,16 @@ function FilterDialog({
           </FormControl>
           <FormControl fullWidth>
             <InputLabel sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
-              Mô Tả
+              Mô Tả Công Việc
             </InputLabel>
             <Select
               multiple
-              name="mo_ta"
-              value={Array.isArray(filterCriteria.mo_ta) ? filterCriteria.mo_ta : []}
+              name="mo_ta_cong_viec" // Updated field name
+              value={
+                Array.isArray(filterCriteria.mo_ta_cong_viec)
+                  ? filterCriteria.mo_ta_cong_viec
+                  : []
+              }
               onChange={handleFilterChange}
               renderValue={(selected) => selected.join(", ")}
               sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
@@ -87,12 +93,46 @@ function FilterDialog({
                 >
                   <Checkbox
                     checked={
-                      Array.isArray(filterCriteria.mo_ta) &&
-                      filterCriteria.mo_ta.indexOf(desc) > -1
+                      Array.isArray(filterCriteria.mo_ta_cong_viec) &&
+                      filterCriteria.mo_ta_cong_viec.indexOf(desc) > -1
                     }
                     size={isMobile ? "small" : "medium"}
                   />
                   <ListItemText primary={desc} />
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <FormControl fullWidth>
+            <InputLabel sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+              Nguyên Nhân Hư Hỏng
+            </InputLabel>
+            <Select
+              multiple
+              name="nguyen_nhan_hu_hong" // Added new filter field
+              value={
+                Array.isArray(filterCriteria.nguyen_nhan_hu_hong)
+                  ? filterCriteria.nguyen_nhan_hu_hong
+                  : []
+              }
+              onChange={handleFilterChange}
+              renderValue={(selected) => selected.join(", ")}
+              sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+            >
+              {nguyenNhanHuHongOptions.map((reason) => (
+                <MenuItem
+                  key={reason}
+                  value={reason}
+                  sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                >
+                  <Checkbox
+                    checked={
+                      Array.isArray(filterCriteria.nguyen_nhan_hu_hong) &&
+                      filterCriteria.nguyen_nhan_hu_hong.indexOf(reason) > -1
+                    }
+                    size={isMobile ? "small" : "medium"}
+                  />
+                  <ListItemText primary={reason} />
                 </MenuItem>
               ))}
             </Select>
@@ -104,7 +144,9 @@ function FilterDialog({
             <Select
               multiple
               name="ket_qua"
-              value={Array.isArray(filterCriteria.ket_qua) ? filterCriteria.ket_qua : []}
+              value={
+                Array.isArray(filterCriteria.ket_qua) ? filterCriteria.ket_qua : []
+              }
               onChange={handleFilterChange}
               renderValue={(selected) => selected.join(", ")}
               sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
@@ -127,6 +169,26 @@ function FilterDialog({
               ))}
             </Select>
           </FormControl>
+          <TextField
+            label="Ngày Bắt Đầu"
+            type="date"
+            name="startDate"
+            value={filterCriteria.startDate}
+            onChange={handleFilterChange}
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+          />
+          <TextField
+            label="Ngày Hoàn Thành"
+            type="date"
+            name="endDate"
+            value={filterCriteria.endDate}
+            onChange={handleFilterChange}
+            fullWidth
+            InputLabelProps={{ shrink: true }}
+            sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+          />
         </Box>
       </DialogContent>
       <DialogActions>

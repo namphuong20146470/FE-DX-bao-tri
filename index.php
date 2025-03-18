@@ -1,405 +1,612 @@
 <?php
-// filepath: /home/phuong/Downloads/HOPT/FE-Mainternance/index.php
 session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
-// Check if API request
-if(isset($_GET['id']) || isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Set JSON headers
+if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     header("Access-Control-Allow-Origin: *");
-    header("Access-Control-Allow-Methods: GET, POST, OPTIONS"); 
+    header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
     header("Access-Control-Allow-Headers: Content-Type");
-    header("Content-Type: application/json");
-
-    // Database config
-    define('DB_HOST', 'localhost');
-    define('DB_USER', 'root');
-    define('DB_PASS', 'H&ptiot2024');
-    define('DB_NAME', 'HOPT');
-
-    // Connect to DB
-    $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME);
-    if ($conn->connect_error) {
-        die(json_encode(["error" => "Connection failed: " . $conn->connect_error]));
-    }
-    $conn->set_charset("utf8");
-
-    // Handle API requests
-    if(isset($_GET['id'])) {
-        $id = $_GET['id'];
-        if (!is_numeric($id)) {
-            echo json_encode(["success" => false, "message" => "ID thiết bị không hợp lệ"]);
-            exit();
-        }
-
-        $query = "SELECT id_bao_tri, id_thiet_bi, DATE_FORMAT(ngay_bao_tri, '%Y-%m-%d') AS ngay_bao_tri,
-                         loai_bao_tri, chi_phi, nhan_vien_phu_trach, mo_ta, ket_qua 
-                  FROM bao_tri 
-                  WHERE id_thiet_bi = ?
-                  ORDER BY ngay_bao_tri DESC
-                  LIMIT 1";
-        $stmt = $conn->prepare($query);
-        $stmt->bind_param("s", $id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-
-        if ($result->num_rows > 0) {
-            $row = $result->fetch_assoc();
-            $row['chi_phi'] = number_format((float)$row['chi_phi'], 2, '.', '');
-            echo json_encode(["success" => true, "data" => $row], JSON_UNESCAPED_UNICODE);
-        } else {
-            echo json_encode(["success" => false, "message" => "Không tìm thấy dữ liệu bảo trì cho thiết bị này"], JSON_UNESCAPED_UNICODE);
-        }
-
-        $stmt->close();
-        $conn->close();
-        exit();
-    }
-
-    if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['all_data'])) {
-        header('Content-Type: application/json');
-        try {
-            $query = "SELECT id_bao_tri, id_thiet_bi, DATE_FORMAT(ngay_bao_tri, '%Y-%m-%d') AS ngay_bao_tri,
-                             loai_bao_tri, chi_phi, nhan_vien_phu_trach, mo_ta, ket_qua
-                      FROM bao_tri
-                      ORDER BY ngay_bao_tri DESC";
-            $stmt = $conn->prepare($query);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            if ($result->num_rows > 0) {
-                $data = [];
-                while ($row = $result->fetch_assoc()) {
-                    // Format decimal values
-                    $row['chi_phi'] = number_format((float)$row['chi_phi'], 2, '.', '');
-                    $data[] = $row;
-                }
-                echo json_encode([
-                    "success" => true,
-                    "data" => $data
-                ], JSON_UNESCAPED_UNICODE);
-            } else {
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Không tìm thấy dữ liệu"
-                ], JSON_UNESCAPED_UNICODE);
-            }
-        } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => "Lỗi: " . $e->getMessage()
-            ], JSON_UNESCAPED_UNICODE);
-        }
-        $stmt->close();
-        exit();
-    }
-    
-    // Get latest maintenance record
-    if ($_SERVER['REQUEST_METHOD'] == 'GET' && isset($_GET['latest'])) {
-        header('Content-Type: application/json');
-        try {
-            $query = "SELECT id_bao_tri, id_thiet_bi, DATE_FORMAT(ngay_bao_tri, '%Y-%m-%d') AS ngay_bao_tri,
-                             loai_bao_tri, chi_phi, nhan_vien_phu_trach, mo_ta, ket_qua
-                      FROM bao_tri
-                      ORDER BY ngay_bao_tri DESC
-                      LIMIT 1";
-            $stmt = $conn->prepare($query);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            if ($result->num_rows > 0) {
-                $data = $result->fetch_assoc();
-                // Format decimal values
-                $data['chi_phi'] = number_format((float)$data['chi_phi'], 2, '.', '');
-                echo json_encode([
-                    "success" => true,
-                    "data" => $data
-                ], JSON_UNESCAPED_UNICODE);
-            } else {
-                echo json_encode([
-                    "success" => false,
-                    "message" => "Không tìm thấy dữ liệu"
-                ], JSON_UNESCAPED_UNICODE);
-            }
-        } catch (Exception $e) {
-            echo json_encode([
-                "success" => false,
-                "message" => "Lỗi: " . $e->getMessage()
-            ], JSON_UNESCAPED_UNICODE);
-        }
-        $stmt->close();
-        exit();
-    }
-    
-    // Add maintenance record
-    if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-        $data = json_decode(file_get_contents("php://input"), true);
-        if (isset($data['add'])) {
-            $stmt = $conn->prepare("INSERT INTO bao_tri
-                (id_thiet_bi, ngay_bao_tri, loai_bao_tri, chi_phi,
-                 nhan_vien_phu_trach, mo_ta, ket_qua)
-                VALUES (?, ?, ?, ?, ?, ?, ?)"
-            );
-            $stmt->bind_param("sssssss",
-                $data['id_thiet_bi'],
-                $data['ngay_bao_tri'],
-                $data['loai_bao_tri'],
-                $data['chi_phi'],
-                $data['nhan_vien_phu_trach'],
-                $data['mo_ta'],
-                $data['ket_qua']
-            );
-    
-            if ($stmt->execute()) {
-                echo json_encode(["success" => true, "message" => "Record added successfully"]);
-            } else {
-                echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
-            }
-            $stmt->close();
-            exit();
-        }
-    }
-    
-    // Update maintenance record
-    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['update'])) {
-        $json = file_get_contents("php://input");
-        $data = json_decode($json, true);
-        
-        if (!$data) {
-            echo json_encode(["success" => false, "message" => "Invalid data"]);
-            exit();
-        }
-    
-        if (!isset($data['id_bao_tri'])) {
-            echo json_encode(["success" => false, "message" => "Missing id_bao_tri"]);
-            exit();
-        }
-    
-        $id_bao_tri = $data['id_bao_tri'];
-        unset($data['id_bao_tri']);
-    
-        if (empty($data)) {
-            echo json_encode(["success" => false, "message" => "No fields to update"]);
-            exit();
-        }
-    
-        // Check if 'them' column exists; add if not
-        $checkColumn = $conn->query("SHOW COLUMNS FROM bao_tri LIKE 'them'");
-        if ($checkColumn->num_rows === 0) {
-            $conn->query("ALTER TABLE bao_tri ADD COLUMN them VARCHAR(255)");
-        }
-    
-        $allowedFields = ['id_thiet_bi', 'ngay_bao_tri', 'loai_bao_tri', 'chi_phi',
-                          'nhan_vien_phu_trach', 'mo_ta', 'ket_qua', 'them'];
-        $fields = [];
-        $values = [];
-        $types  = "";
-    
-        foreach ($data as $key => $value) {
-            if (in_array($key, $allowedFields)) {
-                $fields[] = "$key = ?";
-                $values[] = $value;
-                $types   .= "s";
-            }
-        }
-    
-        if (empty($fields)) {
-            echo json_encode(["success" => false, "message" => "No valid fields"]);
-            exit();
-        }
-    
-        $values[] = $id_bao_tri;
-        $types   .= "s";
-    
-        $sql = "UPDATE bao_tri SET " . implode(", ", $fields) . " WHERE id_bao_tri = ?";
-        $stmt = $conn->prepare($sql);
-    
-        if (!$stmt) {
-            echo json_encode(["success" => false, "message" => "Statement preparation error: " . $conn->error]);
-            exit();
-        }
-    
-        $stmt->bind_param($types, ...$values);
-    
-        if ($stmt->execute()) {
-            echo json_encode(["success" => true, "message" => "Update successful"]);
-        } else {
-            echo json_encode(["success" => false, "message" => "Update error: " . $stmt->error]);
-        }
-    
-        $stmt->close();
-        exit();
-    }
-    
-    // Delete maintenance record via posted form data
-    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
-        $stmt = $conn->prepare("DELETE FROM bao_tri WHERE id_bao_tri=?");
-        $id_bao_tri = $_POST['id_bao_tri'];
-        $stmt->bind_param("s", $id_bao_tri);
-        
-        if ($stmt->execute()) {
-            echo json_encode([
-                "success" => true,
-                "message" => "Record deleted successfully"
-            ]);
-        } else {
-            echo json_encode([
-                "success" => false,
-                "message" => "Error deleting record: " . $stmt->error
-            ]);
-        }
-        $stmt->close();
-        exit();
-    }
-    
-    // Delete maintenance record via JSON request (?delete)
-    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_GET['delete'])) {
-        $data = json_decode(file_get_contents("php://input"), true);
-        
-        if (!isset($data['id_bao_tri'])) {
-            echo json_encode(["success" => false, "message" => "Missing ID"]);
-            exit();
-        }
-    
-        $sql = "DELETE FROM bao_tri WHERE id_bao_tri = ?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("s", $data['id_bao_tri']);
-    
-        if ($stmt->execute()) {
-            echo json_encode(["success" => true, "message" => "Record deleted successfully"]);
-        } else {
-            echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
-        }
-        
-        $stmt->close();
-        exit();
-    }
-
-    $conn->close();
-    exit();
+    exit("HTTP/1.1 200 OK");
 }
 
-// If not an API request, show HTML page
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type");
+
+define('DB_HOST', 'localhost');
+define('DB_USER', 'root');
+define('DB_PASS', 'H&ptiot2024');
+define('DB_NAME', 'HOPT');
+
+$connUser = new mysqli("localhost", "root", "H&ptiot2024", "user") or die("User DB failed: " . $connUser->connect_error);
+$conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME) or die("Connection failed: " . $conn->connect_error);
+$conn->set_charset("utf8");
+
+function handleDBQuery($conn, $query, $params = [], $types = '') {
+    $stmt = $conn->prepare($query);
+    if ($params) $stmt->bind_param($types, ...$params);
+    $stmt->execute();
+    return $stmt->get_result();
+}
+
+// Xử lý đăng ký
+if (isset($_GET['register']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data = json_decode(file_get_contents("php://input"), true);
+    if (isset($data['reg_username']) && isset($data['reg_password'])) {
+        $stmt = $connUser->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+        $stmt->bind_param("ss", $data['reg_username'], password_hash($data['reg_password'], PASSWORD_BCRYPT));
+        echo $stmt->execute() ? json_encode(["success" => true, "message" => "Registration successful"]) : json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+        $stmt->close();
+        exit;
+    }
+    echo json_encode(["success" => false, "message" => "Username and password required"]);
+    exit;
+}
+
+// Xử lý đăng ký qua form
+if (isset($_POST['register'])) {
+    if (isset($_POST['reg_username']) && isset($_POST['reg_password'])) {
+        $stmt = $connUser->prepare("INSERT INTO users (username, password) VALUES (?, ?)");
+        $stmt->bind_param("ss", $_POST['reg_username'], password_hash($_POST['reg_password'], PASSWORD_BCRYPT));
+        echo $stmt->execute() ? "<div class='alert alert-success'>Registration successful. <a href='#login'>Login here</a></div>" : "<div class='alert alert-danger'>Error: " . $stmt->error . "</div>";
+        $stmt->close();
+    } else {
+        echo "<div class='alert alert-warning'>Username and password required.</div>";
+    }
+}
+
+// Xử lý đăng nhập
+if (isset($_POST['login'])) {
+    if (isset($_POST['login_username']) && isset($_POST['login_password'])) {
+        $stmt = $connUser->prepare("SELECT password FROM users WHERE username = ?");
+        $stmt->bind_param("s", $_POST['login_username']);
+        $stmt->execute();
+        $stmt->store_result();
+        if ($stmt->num_rows > 0) {
+            $stmt->bind_result($hashed_password);
+            $stmt->fetch();
+            if (password_verify($_POST['login_password'], $hashed_password)) {
+                $_SESSION['username'] = $_POST['login_username'];
+                header("Location: index.php");
+                exit;
+            }
+            echo "<div class='alert alert-danger'>Invalid password</div>";
+        } else {
+            echo "<div class='alert alert-danger'>Username not found</div>";
+        }
+        $stmt->close();
+    } else {
+        echo "<div class='alert alert-warning'>Username and password required.</div>";
+    }
+}
+
+// Xử lý API JSON
+if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METHOD'] === 'POST') {
+    header("Content-Type: application/json");
+
+    if (isset($_GET['login']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $data = json_decode(file_get_contents("php://input"), true);
+        if (isset($data['login_username']) && isset($data['login_password'])) {
+            $stmt = $connUser->prepare("SELECT password FROM users WHERE username = ?");
+            $stmt->bind_param("s", $data['login_username']);
+            $stmt->execute();
+            $stmt->store_result();
+            if ($stmt->num_rows > 0) {
+                $stmt->bind_result($hashed_password);
+                $stmt->fetch();
+                if (password_verify($data['login_password'], $hashed_password)) {
+                    $_SESSION['username'] = $data['login_username'];
+                    echo json_encode(["success" => true, "message" => "Login successful"]);
+                } else {
+                    echo json_encode(["success" => false, "message" => "Invalid password"]);
+                }
+            } else {
+                echo json_encode(["success" => false, "message" => "Username not found"]);
+            }
+            $stmt->close();
+            exit;
+        }
+        echo json_encode(["success" => false, "message" => "Username and password required"]);
+        exit;
+    }
+
+    if (isset($_GET['id'])) {
+        if (!is_numeric($_GET['id'])) {
+            echo json_encode(["success" => false, "message" => "Invalid ID"]);
+            exit;
+        }
+        $stmt = $conn->prepare("SELECT STT, id_bao_tri, id_thiet_bi, loai_thiet_bi, khach_hang, vi_tri_lap_dat, DATE_FORMAT(ngay_bat_dau, '%Y-%m-%d') AS ngay_bat_dau, DATE_FORMAT(ngay_hoan_thanh, '%Y-%m-%d') AS ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, DATE_FORMAT(lich_tiep_theo, '%Y-%m-%d') AS lich_tiep_theo, trang_thai, hinh_anh FROM bao_tri_1 WHERE id_thiet_bi = ? ORDER BY ngay_hoan_thanh DESC");
+        $stmt->bind_param("i", $_GET['id']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = [];
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+        echo json_encode($data ? ["success" => true, "data" => $data] : ["success" => false, "message" => "No data found"], JSON_UNESCAPED_UNICODE);
+        $stmt->close();
+        exit;
+    }
+
+    if (isset($_GET['all_data'])) {
+        $result = handleDBQuery($conn, "SELECT STT, id_bao_tri, id_thiet_bi, loai_thiet_bi, khach_hang, vi_tri_lap_dat, DATE_FORMAT(ngay_bat_dau, '%Y-%m-%d') AS ngay_bat_dau, DATE_FORMAT(ngay_hoan_thanh, '%Y-%m-%d') AS ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, DATE_FORMAT(lich_tiep_theo, '%Y-%m-%d') AS lich_tiep_theo, trang_thai, hinh_anh FROM bao_tri_1 ORDER BY ngay_hoan_thanh DESC");
+        $data = [];
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+        echo json_encode(["success" => true, "data" => $data], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    if (isset($_GET['latest'])) {
+        $result = handleDBQuery($conn, "SELECT STT, id_bao_tri, id_thiet_bi, loai_thiet_bi, khach_hang, vi_tri_lap_dat, DATE_FORMAT(ngay_bat_dau, '%Y-%m-%d') AS ngay_bat_dau, DATE_FORMAT(ngay_hoan_thanh, '%Y-%m-%d') AS ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, DATE_FORMAT(lich_tiep_theo, '%Y-%m-%d') AS lich_tiep_theo, trang_thai, hinh_anh FROM bao_tri_1 ORDER BY ngay_hoan_thanh DESC LIMIT 1");
+        $data = $result->fetch_assoc();
+        echo json_encode($data ? ["success" => true, "data" => $data] : ["success" => false, "message" => "No data found"], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_GET['update']) && !isset($_GET['delete']) && !isset($_GET['add_extended'])) {
+        $data = json_decode(file_get_contents("php://input"), true);
+        if (!$conn->query("SHOW COLUMNS FROM bao_tri_1 LIKE 'khach_hang'")->num_rows) $conn->query("ALTER TABLE bao_tri_1 ADD COLUMN khach_hang VARCHAR(255)");
+        if (!$conn->query("SHOW COLUMNS FROM bao_tri_1 LIKE 'vi_tri_lap_dat'")->num_rows) $conn->query("ALTER TABLE bao_tri_1 ADD COLUMN vi_tri_lap_dat VARCHAR(255)");
+
+        if (isset($data[0]) && is_array($data)) {
+            $conn->begin_transaction();
+            $stmt = $conn->prepare("INSERT INTO bao_tri_1 (id_thiet_bi, ngay_bat_dau, ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, lich_tiep_theo, trang_thai, khach_hang, vi_tri_lap_dat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $results = ['success' => 0, 'failed' => 0, 'errors' => []];
+            foreach ($data as $i => $r) {
+                $stmt->bind_param("isssssssssss", $r['id_thiet_bi'], $r['ngay_bat_dau'], $r['ngay_hoan_thanh'], $r['loai_bao_tri'], $r['nguoi_phu_trach'], $r['mo_ta_cong_viec'], $r['nguyen_nhan_hu_hong'], $r['ket_qua'], $r['lich_tiep_theo'], $r['trang_thai'], $r['khach_hang'], $r['vi_tri_lap_dat']);
+                $stmt->execute() ? $results['success']++ : $results['failed']++ && $results['errors'][] = "Row " . ($i + 1) . ": " . $stmt->error;
+            }
+            if ($results['failed']) {
+                $conn->rollback();
+                echo json_encode(["success" => false, "message" => "Import failed", "details" => $results]);
+            } else {
+                $conn->commit();
+                echo json_encode(["success" => true, "message" => "Imported " . $results['success'] . " records"]);
+            }
+            $stmt->close();
+            exit;
+        }
+
+        $stmt = $conn->prepare("INSERT INTO bao_tri_1 (id_thiet_bi, ngay_bat_dau, ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, lich_tiep_theo, trang_thai, khach_hang, vi_tri_lap_dat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("isssssssssss", $data['id_thiet_bi'], $data['ngay_bat_dau'], $data['ngay_hoan_thanh'], $data['loai_bao_tri'], $data['nguoi_phu_trach'], $data['mo_ta_cong_viec'], $data['nguyen_nhan_hu_hong'], $data['ket_qua'], $data['lich_tiep_theo'], $data['trang_thai'], $data['khach_hang'], $data['vi_tri_lap_dat']);
+        echo $stmt->execute() ? json_encode(["success" => true, "message" => "Record added"]) : json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+        $stmt->close();
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['add_extended'])) {
+        $rawInput = file_get_contents("php://input");
+        $json = json_decode($rawInput, true);
+        if (!$json) {
+            echo json_encode(["success" => false, "message" => "Invalid JSON: " . json_last_error_msg()]);
+            exit();
+        }
+
+        $standardFields = [
+            'id_bao_tri' => 'INT',
+            'id_thiet_bi' => 'INT',
+            'loai_thiet_bi' => 'VARCHAR(255)',
+            'khach_hang' => 'VARCHAR(255)',
+            'vi_tri_lap_dat' => 'VARCHAR(255)',
+            'ngay_bat_dau' => 'DATE',
+            'ngay_hoan_thanh' => 'DATE',
+            'loai_bao_tri' => 'VARCHAR(255)',
+            'nguoi_phu_trach' => 'VARCHAR(255)',
+            'mo_ta_cong_viec' => 'TEXT',
+            'nguyen_nhan_hu_hong' => 'TEXT',
+            'ket_qua' => 'TEXT',
+            'lich_tiep_theo' => 'DATE',
+            'trang_thai' => 'VARCHAR(100)',
+            'hinh_anh' => 'TEXT'
+        ];
+
+        foreach ($standardFields as $field => $type) {
+            $escapedField = $conn->real_escape_string($field);
+            $check = $conn->query("SHOW COLUMNS FROM bao_tri_1 LIKE '$escapedField'");
+            if ($check->num_rows === 0) {
+                if ($conn->query("ALTER TABLE bao_tri_1 ADD COLUMN `$escapedField` $type")) {
+                    error_log("Added standard column: $escapedField");
+                } else {
+                    echo json_encode(["success" => false, "message" => "Failed to add column $escapedField: " . $conn->error]);
+                    exit();
+                }
+            }
+        }
+
+        $addedColumns = [];
+        foreach ($json as $key => $value) {
+            if (!array_key_exists($key, $standardFields)) {
+                $escapedKey = $conn->real_escape_string($key);
+                $check = $conn->query("SHOW COLUMNS FROM bao_tri_1 LIKE '$escapedKey'");
+                if ($check->num_rows === 0) {
+                    if ($conn->query("ALTER TABLE bao_tri_1 ADD COLUMN `$escapedKey` VARCHAR(255)")) {
+                        $addedColumns[] = $key;
+                        error_log("Added new column: $escapedKey");
+                    } else {
+                        echo json_encode(["success" => false, "message" => "Failed to add column $escapedKey: " . $conn->error]);
+                        exit();
+                    }
+                }
+            }
+        }
+
+        if (!isset($json['id_thiet_bi']) || empty($json['id_thiet_bi']) || $json['id_thiet_bi'] === null) {
+            $json['id_thiet_bi'] = 'DEFAULT-' . time();
+        }
+
+        $columns = array_keys($json);
+        $placeholders = array_fill(0, count($columns), '?');
+        $values = array_values($json);
+
+        $types = str_repeat('s', count($values));
+        $sql = "INSERT INTO bao_tri_1 (" . implode(", ", array_map([$conn, 'real_escape_string'], $columns)) . ") VALUES (" . implode(", ", $placeholders) . ")";
+
+        $stmt = $conn->prepare($sql);
+        if (!$stmt) {
+            echo json_encode([
+                "success" => false,
+                "message" => "SQL preparation failed: " . $conn->error,
+                "columns_added" => $addedColumns
+            ]);
+            exit();
+        }
+
+        $stmt->bind_param($types, ...$values);
+        $result = $stmt->execute();
+        $stmt->close();
+
+        if ($result) {
+            echo json_encode([
+                "success" => true,
+                "message" => "Data added successfully with new field(s)",
+                "columns_added" => $addedColumns,
+                "data_inserted" => $json,
+                "last_insert_id" => $conn->insert_id
+            ]);
+        } else {
+            echo json_encode([
+                "success" => false,
+                "message" => "Insertion failed: " . $conn->error,
+                "columns_added" => $addedColumns,
+                "data_attempted" => $json
+            ]);
+        }
+        exit();
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['update'])) {
+        $data = json_decode(file_get_contents("php://input"), true);
+        if (!$data || !isset($data['STT'])) {
+            echo json_encode(["success" => false, "message" => "Invalid data or missing STT"]);
+            exit;
+        }
+        $STT = $data['STT'];
+        unset($data['STT']);
+        if (empty($data)) {
+            echo json_encode(["success" => false, "message" => "No fields to update"]);
+            exit;
+        }
+
+        $addedColumns = [];
+        foreach ($data as $key => $value) {
+            $escapedKey = $conn->real_escape_string($key);
+            $check = $conn->query("SHOW COLUMNS FROM bao_tri_1 LIKE '$escapedKey'");
+            if ($check->num_rows === 0) {
+                if ($conn->query("ALTER TABLE bao_tri_1 ADD COLUMN `$escapedKey` VARCHAR(255)")) {
+                    $addedColumns[] = $key;
+                }
+            }
+        }
+
+        $fields = $values = [];
+        $types = "";
+        foreach ($data as $k => $v) {
+            $fields[] = "`$k` = ?";
+            $values[] = $v;
+            $types .= "s";
+        }
+
+        if (empty($fields)) {
+            echo json_encode(["success" => false, "message" => "No valid fields"]);
+            exit;
+        }
+
+        $values[] = $STT;
+        $types .= "i";
+        $stmt = $conn->prepare("UPDATE bao_tri_1 SET " . implode(", ", $fields) . " WHERE STT = ?");
+        $stmt->bind_param($types, ...$values);
+        $result = $stmt->execute();
+        echo $result ?
+            json_encode(["success" => true, "message" => "Update successful", "columns_added" => $addedColumns]) :
+            json_encode(["success" => false, "message" => "Update error: " . $stmt->error]);
+        $stmt->close();
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['delete'])) {
+        $stmt = $conn->prepare("DELETE FROM bao_tri_1 WHERE STT = ?");
+        $stmt->bind_param("i", $_POST['STT']);
+        echo $stmt->execute() ? json_encode(["success" => true, "message" => "Record deleted"]) : json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+        $stmt->close();
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_GET['delete'])) {
+        $data = json_decode(file_get_contents("php://input"), true);
+        if (!isset($data['STT'])) {
+            echo json_encode(["success" => false, "message" => "Missing STT"]);
+            exit;
+        }
+        $stmt = $conn->prepare("DELETE FROM bao_tri_1 WHERE STT = ?");
+        $stmt->bind_param("i", $data['STT']);
+        echo $stmt->execute() ? json_encode(["success" => true, "message" => "Record deleted"]) : json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+        $stmt->close();
+        exit;
+    }
+
+    exit;
+}
+
+$data = [];
+if (isset($_GET['id'])) {
+    $parts = explode('/', $_GET['id']);
+    if (count($parts) === 2 && is_numeric($parts[0])) {
+        $stmt = $conn->prepare("SELECT STT, id_bao_tri, id_thiet_bi, loai_thiet_bi, khach_hang, vi_tri_lap_dat, DATE_FORMAT(ngay_bat_dau, '%Y-%m-%d') AS ngay_bat_dau, DATE_FORMAT(ngay_hoan_thanh, '%Y-%m-%d') AS ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, DATE_FORMAT(lich_tiep_theo, '%Y-%m-%d') AS lich_tiep_theo, trang_thai, hinh_anh FROM bao_tri_1 WHERE id_thiet_bi = ? ORDER BY ngay_hoan_thanh DESC");
+        $stmt->bind_param("i", $parts[0]);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+        $stmt->close();
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tra cứu bảo trì thiết bị</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: #f0f2f5;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        h1 {
-            color: #1a73e8;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .search-box {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        input {
-            padding: 10px;
-            width: 200px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            margin-right: 10px;
-        }
-        button {
-            padding: 10px 20px;
-            background: #1a73e8;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background: #1557b0;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-        th, td {
-            padding: 12px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-        th {
-            background: #f8f9fa;
-            font-weight: 600;
-        }
-        tr:nth-child(even) {
-            background: #f8f9fa;
-        }
-        .error {
-            color: #d32f2f;
-            text-align: center;
-            margin-top: 20px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Chi tiết bảo trì thiết bị</title>
+<style>
+body {
+font-family: Arial, sans-serif;
+margin: 0;
+padding: 10px;
+background: #f0f2f5;
+color: #333;
+}
+.container {
+width: 100%;
+max-width: 900px;
+margin: 0 auto;
+background: white;
+padding: 15px;
+border-radius: 10px;
+box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+box-sizing: border-box;
+}
+h1 {
+color: #1a73e8;
+text-align: center;
+margin-bottom: 15px;
+font-size: 24px;
+font-weight: 600;
+}
+.device-info {
+background: #e3f2fd;
+padding: 15px;
+border-radius: 8px;
+margin-bottom: 20px;
+border-left: 4px solid #1a73e8;
+}
+.device-info h2 {
+font-size: 18px;
+margin: 0 0 10px;
+color: #1a73e8;
+}
+.device-info p {
+margin: 8px 0;
+font-size: 14px;
+word-break: break-word;
+}
+.history-section {
+margin-top: 20px;
+}
+.history-section h2 {
+font-size: 18px;
+color: #d32f2f;
+border-bottom: 2px solid #d32f2f;
+padding-bottom: 5px;
+margin-bottom: 15px;
+}
+.table-container {
+width: 100%;
+overflow-x: auto;
+-webkit-overflow-scrolling: touch;
+margin-bottom: 15px;
+}
+.history-table {
+width: 100%;
+border-collapse: separate;
+border-spacing: 0;
+min-width: 600px; /* Ensures minimum width for scrolling */
+}
+.history-table th, .history-table td {
+padding: 10px;
+text-align: left;
+border-bottom: 1px solid #e0e0e0;
+font-size: 14px;
+word-break: break-word;
+}
+.history-table th {
+background: #f8f9fa;
+font-weight: 600;
+color: #444;
+border-top: 2px solid #d32f2f;
+border-bottom: 2px solid #d32f2f;
+position: sticky;
+top: 0;
+z-index: 1;
+}
+.history-table td {
+background: #fff;
+}
+.history-table tr:hover td {
+background: #f5f5f5;
+transition: background 0.3s;
+}
+.next-maintenance {
+margin-top: 20px;
+padding: 15px;
+background: #e8f5e9;
+border-radius: 8px;
+border-left: 4px solid #2e7d32;
+font-size: 14px;
+font-weight: 500;
+word-break: break-word;
+}
+.home-button {
+display: block;
+width: 80%;
+max-width: 200px;
+margin: 20px auto 0;
+padding: 12px 0;
+background: #1a73e8;
+color: white;
+text-align: center;
+text-decoration: none;
+font-weight: bold;
+border-radius: 5px;
+border: none;
+cursor: pointer;
+box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+transition: background-color 0.3s;
+font-size: 14px;
+}
+.home-button:hover {
+background: #0d47a1;
+}
+.error {
+text-align: center;
+color: #d32f2f;
+padding: 20px;
+background: #fde8e8;
+border-radius: 4px;
+margin-top: 20px;
+font-size: 14px;
+}
+.image-link {
+color: #1a73e8;
+text-decoration: none;
+font-weight: bold;
+}
+.image-link:hover {
+text-decoration: underline;
+}
+/* Responsive adjustments */
+@media (max-width: 768px) {
+h1 {
+font-size: 20px;
+}
+.device-info {
+padding: 12px;
+}
+.device-info h2 {
+font-size: 16px;
+}
+.device-info p {
+font-size: 14px;
+}
+.history-section h2 {
+font-size: 16px;
+}
+.history-table th, .history-table td {
+padding: 8px;
+font-size: 13px;
+}
+}
+@media (max-width: 480px) {
+body {
+padding: 5px;
+}
+.container {
+padding: 10px;
+}
+h1 {
+font-size: 18px;
+margin-bottom: 10px;
+}
+.home-button {
+width: 100%;
+padding: 10px 0;
+}
+}
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>Tra cứu thông tin bảo trì thiết bị</h1>
-        <div class="search-box">
-            <input type="text" id="idInput" placeholder="Nhập ID bảo trì..." />
-            <button onclick="searchById()">Tra cứu</button>
-        </div>
-        <div id="result"></div>
-    </div>
-
-    <script>
-        function searchById() {
-            const id = document.getElementById('idInput').value.trim();
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '';
-
-            if (!id) {
-                resultDiv.innerHTML = '<p class="error">Vui lòng nhập ID bảo trì</p>';
-                return;
-            }
-
-            fetch(`${window.location.href}?id=${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const record = data.data;
-                        resultDiv.innerHTML = `
-                            <table>
-                                <tr><th>ID Bảo Trì</th><td>${record.id_bao_tri}</td></tr>
-                                <tr><th>ID Thiết Bị</th><td>${record.id_thiet_bi}</td></tr>
-                                <tr><th>Ngày Bảo Trì</th><td>${record.ngay_bao_tri}</td></tr>
-                                <tr><th>Loại Bảo Trì</th><td>${record.loai_bao_tri}</td></tr>
-                             
-                                <tr><th>Nhân Viên Phụ Trách</th><td>${record.nhan_vien_phu_trach}</td></tr>
-                                <tr><th>Mô Tả</th><td>${record.mo_ta}</td></tr>
-                                <tr><th>Kết Quả</th><td>${record.ket_qua}</td></tr>
-                            </table>
-                        `;
-                    } else {
-                        resultDiv.innerHTML = `<p class="error">${data.message}</p>`;
-                    }
-                })
-                .catch(error => {
-                    resultDiv.innerHTML = `<p class="error">Lỗi: ${error}</p>`;
-                });
-        }
-    </script>
+<div class="container">
+<?php if (!empty($data)): ?>
+<h1>Thông tin bảo trì thiết bị #<?php echo htmlspecialchars($data[0]['id_thiet_bi']); ?></h1>
+<div class="device-info">
+<h2>Thông tin thiết bị</h2>
+<p><strong>Thiết bị:</strong> <?php echo htmlspecialchars($data[0]['loai_thiet_bi'] ?: 'Máy Nén Khí TB1001'); ?></p>
+<p><strong>Loại:</strong> <?php echo htmlspecialchars($data[0]['loai_thiet_bi'] ?: 'Máy nén khí'); ?></p>
+<p><strong>Nhà cung cấp:</strong> <?php echo htmlspecialchars('Karz Storz'); ?></p>
+<p><strong>Tên Khách Hàng:</strong> <?php echo htmlspecialchars($data[0]['khach_hang'] ?: 'Bệnh viện Hoàn Mỹ Sài Gòn'); ?></p>
+<p><strong>Lắp đặt tại:</strong> <?php echo htmlspecialchars($data[0]['vi_tri_lap_dat'] ?: 'Nhà xưởng 1 - Khu A'); ?></p>
+</div>
+<div class="history-section">
+<h2>Lịch sử bảo trì</h2>
+<div class="table-container">
+<table class="history-table">
+<thead>
+<tr>
+<th>Ngày</th>
+<th>Loại</th>
+<th>Nguyên nhân</th>
+<th>Mô tả</th>
+<th>Người phụ trách</th>
+<th>Kết quả</th>
+<th>Hình ảnh</th>
+</tr>
+</thead>
+<tbody>
+<?php foreach ($data as $record): ?>
+<tr>
+<td><?php echo htmlspecialchars($record['ngay_hoan_thanh']); ?></td>
+<td><?php echo htmlspecialchars($record['loai_bao_tri']); ?></td>
+<td><?php echo htmlspecialchars($record['nguyen_nhan_hu_hong']); ?></td>
+<td><?php echo htmlspecialchars($record['mo_ta_cong_viec']); ?></td>
+<td><?php echo htmlspecialchars($record['nguoi_phu_trach']); ?></td>
+<td><?php echo htmlspecialchars($record['ket_qua']); ?></td>
+<td>
+<?php if ($record['hinh_anh']): ?>
+<a href="<?php echo htmlspecialchars($record['hinh_anh']); ?>" target="_blank" class="image-link">📎 Xem trước/sau</a>
+<?php else: ?>
+Không có
+<?php endif; ?>
+</td>
+</tr>
+<?php endforeach; ?>
+</tbody>
+</table>
+</div>
+</div>
+<div class="next-maintenance">
+<strong>Lịch bảo trì tiếp theo:</strong> <?php echo htmlspecialchars($data[0]['lich_tiep_theo'] ?: '15/06/2025'); ?>
+</div>
+<a href="https://baotri.hoangphucthanh.vn/" class="home-button">Về Trang Chủ</a>
+<?php else: ?>
+<div class="error">Không tìm thấy thông tin bảo trì.</div>
+<a href="https://baotri.hoangphucthanh.vn/" class="home-button">Về Trang Chủ</a>
+<?php endif; ?>
+</div>
 </body>
 </html>
+<?php
+$conn->close();
+?>
