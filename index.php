@@ -130,11 +130,32 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
     }
 
     if (isset($_GET['all_data'])) {
-        $result = handleDBQuery($conn, "SELECT STT, id_bao_tri, id_thiet_bi, loai_thiet_bi, khach_hang, vi_tri_lap_dat, DATE_FORMAT(ngay_bat_dau, '%Y-%m-%d') AS ngay_bat_dau, DATE_FORMAT(ngay_hoan_thanh, '%Y-%m-%d') AS ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, DATE_FORMAT(lich_tiep_theo, '%Y-%m-%d') AS lich_tiep_theo, trang_thai, hinh_anh FROM bao_tri_1 ORDER BY ngay_hoan_thanh DESC");
+        // Get all column names from the table
+        $columnsResult = $conn->query("SHOW COLUMNS FROM bao_tri_1");
+        $columns = [];
+        $dateColumns = ['ngay_bat_dau', 'ngay_hoan_thanh', 'lich_tiep_theo'];
+        
+        // Build a dynamic select statement that formats date columns
+        $selectParts = [];
+        while ($column = $columnsResult->fetch_assoc()) {
+            $columnName = $column['Field'];
+            $columns[] = $columnName;
+            
+            if (in_array($columnName, $dateColumns)) {
+                $selectParts[] = "DATE_FORMAT($columnName, '%Y-%m-%d') AS $columnName";
+            } else {
+                $selectParts[] = $columnName;
+            }
+        }
+        
+        $selectSql = implode(", ", $selectParts);
+        $result = $conn->query("SELECT $selectSql FROM bao_tri_1 ORDER BY ngay_hoan_thanh DESC");
+        
         $data = [];
         while ($row = $result->fetch_assoc()) {
             $data[] = $row;
         }
+        
         echo json_encode(["success" => true, "data" => $data], JSON_UNESCAPED_UNICODE);
         exit;
     }
@@ -351,15 +372,57 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
 }
 
 $data = [];
+$deviceDetails = [];
+$maintenanceList = [];
+
 if (isset($_GET['id'])) {
     $parts = explode('/', $_GET['id']);
-    if (count($parts) === 2 && is_numeric($parts[0])) {
-        $stmt = $conn->prepare("SELECT STT, id_bao_tri, id_thiet_bi, loai_thiet_bi, khach_hang, vi_tri_lap_dat, DATE_FORMAT(ngay_bat_dau, '%Y-%m-%d') AS ngay_bat_dau, DATE_FORMAT(ngay_hoan_thanh, '%Y-%m-%d') AS ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, DATE_FORMAT(lich_tiep_theo, '%Y-%m-%d') AS lich_tiep_theo, trang_thai, hinh_anh FROM bao_tri_1 WHERE id_thiet_bi = ? ORDER BY ngay_hoan_thanh DESC");
-        $stmt->bind_param("i", $parts[0]);
+    if (count($parts) >= 2 && is_numeric($parts[0])) {
+        $id_thiet_bi = $parts[0];
+        $khu_vuc = isset($parts[1]) ? urldecode($parts[1]) : '';
+        $id_seri = '';
+        if (isset($_GET['id_seri'])) {
+            $id_seri = urldecode($_GET['id_seri']);
+        }
+
+        // Lấy thông tin thiết bị (dùng record đầu tiên làm đại diện)
+        $stmt = $conn->prepare("SELECT STT, id_bao_tri, id_thiet_bi, loai_thiet_bi, khach_hang, vi_tri_lap_dat, DATE_FORMAT(ngay_bat_dau, '%Y-%m-%d') AS ngay_bat_dau, DATE_FORMAT(ngay_hoan_thanh, '%Y-%m-%d') AS ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, DATE_FORMAT(lich_tiep_theo, '%Y-%m-%d') AS lich_tiep_theo, trang_thai, hinh_anh FROM bao_tri_1 WHERE id_thiet_bi = ? ORDER BY ngay_hoan_thanh DESC LIMIT 1");
+        $stmt->bind_param("i", $id_thiet_bi);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        if ($row = $result->fetch_assoc()) {
+            $deviceDetails = $row;
+        }
+        $stmt->close();
+
+        // Lấy danh sách bảo trì dựa trên id_thiet_bi, khu_vuc, và id_seri
+        $whereClauses = ["id_thiet_bi = ?"];
+        $params = [$id_thiet_bi];
+        $types = "i";
+
+        if (!empty($khu_vuc)) {
+            $whereClauses[] = "vi_tri_lap_dat LIKE ?";
+            $params[] = "%" . $khu_vuc . "%";
+            $types .= "s";
+        }
+        if (!empty($id_seri)) {
+            // Giả định id_seri là một trường mới, bạn cần thêm cột 'id_seri' vào bảng bao_tri_1 nếu chưa có
+            $whereClauses[] = "id_seri = ?";
+            $params[] = $id_seri;
+            $types .= "s";
+            // Thêm cột id_seri nếu chưa tồn tại
+            if (!$conn->query("SHOW COLUMNS FROM bao_tri_1 LIKE 'id_seri'")->num_rows) {
+                $conn->query("ALTER TABLE bao_tri_1 ADD COLUMN id_seri VARCHAR(255)");
+            }
+        }
+
+        $whereSql = implode(" AND ", $whereClauses);
+        $stmt = $conn->prepare("SELECT STT, id_bao_tri, id_thiet_bi, loai_thiet_bi, khach_hang, vi_tri_lap_dat, DATE_FORMAT(ngay_bat_dau, '%Y-%m-%d') AS ngay_bat_dau, DATE_FORMAT(ngay_hoan_thanh, '%Y-%m-%d') AS ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, DATE_FORMAT(lich_tiep_theo, '%Y-%m-%d') AS lich_tiep_theo, trang_thai, hinh_anh, id_seri FROM bao_tri_1 WHERE $whereSql ORDER BY ngay_hoan_thanh DESC");
+        $stmt->bind_param($types, ...$params);
         $stmt->execute();
         $result = $stmt->get_result();
         while ($row = $result->fetch_assoc()) {
-            $data[] = $row;
+            $maintenanceList[] = $row;
         }
         $stmt->close();
     }
@@ -549,15 +612,16 @@ padding: 10px 0;
 </head>
 <body>
 <div class="container">
-<?php if (!empty($data)): ?>
-<h1>Thông tin bảo trì thiết bị #<?php echo htmlspecialchars($data[0]['id_thiet_bi']); ?></h1>
+<?php if (!empty($deviceDetails) || !empty($maintenanceList)): ?>
+<h1>Thông tin bảo trì thiết bị #<?php echo htmlspecialchars($deviceDetails['id_thiet_bi'] ?? $maintenanceList[0]['id_thiet_bi'] ?? ''); ?></h1>
 <div class="device-info">
 <h2>Thông tin thiết bị</h2>
-<p><strong>Thiết bị:</strong> <?php echo htmlspecialchars($data[0]['loai_thiet_bi'] ?: 'Máy Nén Khí TB1001'); ?></p>
-<p><strong>Loại:</strong> <?php echo htmlspecialchars($data[0]['loai_thiet_bi'] ?: 'Máy nén khí'); ?></p>
+<p><strong>Thiết bị:</strong> <?php echo htmlspecialchars($deviceDetails['loai_thiet_bi'] ?? 'Máy Nén Khí TB1001'); ?></p>
+<!-- <p><strong>Loại:</strong> <?php echo htmlspecialchars($deviceDetails['loai_thiet_bi'] ?? 'Máy nén khí'); ?></p> -->
 <p><strong>Nhà cung cấp:</strong> <?php echo htmlspecialchars('Karz Storz'); ?></p>
-<p><strong>Tên Khách Hàng:</strong> <?php echo htmlspecialchars($data[0]['khach_hang'] ?: 'Bệnh viện Hoàn Mỹ Sài Gòn'); ?></p>
-<p><strong>Lắp đặt tại:</strong> <?php echo htmlspecialchars($data[0]['vi_tri_lap_dat'] ?: 'Nhà xưởng 1 - Khu A'); ?></p>
+<p><strong>Tên Khách Hàng:</strong> <?php echo htmlspecialchars($deviceDetails['khach_hang'] ?? 'Bệnh viện Hoàn Mỹ Sài Gòn'); ?></p>
+<!-- <p><strong>Lắp đặt tại:</strong> <?php echo htmlspecialchars($deviceDetails['vi_tri_lap_dat'] ?? ''); ?> (Khu vực: <?php echo htmlspecialchars($khu_vuc); ?>)</p> -->
+<!-- <p><strong>ID Số seri:</strong> <?php echo htmlspecialchars($id_seri ?: 'Không có'); ?></p> -->
 </div>
 <div class="history-section">
 <h2>Lịch sử bảo trì</h2>
@@ -565,6 +629,8 @@ padding: 10px 0;
 <table class="history-table">
 <thead>
 <tr>
+<th>ID Số seri</th>
+<th>Khu vực</th>
 <th>Ngày</th>
 <th>Loại</th>
 <th>Nguyên nhân</th>
@@ -572,11 +638,14 @@ padding: 10px 0;
 <th>Người phụ trách</th>
 <th>Kết quả</th>
 <th>Hình ảnh</th>
+
 </tr>
 </thead>
 <tbody>
-<?php foreach ($data as $record): ?>
+<?php foreach ($maintenanceList as $record): ?>
 <tr>
+<td><?php echo htmlspecialchars($record['id_seri'] ?? 'Không có'); ?></td>
+<td><?php echo htmlspecialchars($record['vi_tri_lap_dat'] ?? ''); ?></td>
 <td><?php echo htmlspecialchars($record['ngay_hoan_thanh']); ?></td>
 <td><?php echo htmlspecialchars($record['loai_bao_tri']); ?></td>
 <td><?php echo htmlspecialchars($record['nguyen_nhan_hu_hong']); ?></td>
@@ -590,6 +659,7 @@ padding: 10px 0;
 Không có
 <?php endif; ?>
 </td>
+
 </tr>
 <?php endforeach; ?>
 </tbody>
@@ -597,7 +667,7 @@ Không có
 </div>
 </div>
 <div class="next-maintenance">
-<strong>Lịch bảo trì tiếp theo:</strong> <?php echo htmlspecialchars($data[0]['lich_tiep_theo'] ?: '15/06/2025'); ?>
+<strong>Lịch bảo trì tiếp theo:</strong> <?php echo htmlspecialchars($deviceDetails['lich_tiep_theo'] ?? '15/06/2025'); ?>
 </div>
 <a href="https://baotri.hoangphucthanh.vn/" class="home-button">Về Trang Chủ</a>
 <?php else: ?>
