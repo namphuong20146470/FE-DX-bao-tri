@@ -3,6 +3,7 @@ session_start();
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Xử lý CORS
 if ($_SERVER['REQUEST_METHOD'] == 'OPTIONS') {
     header("Access-Control-Allow-Origin: *");
     header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
@@ -14,15 +15,18 @@ header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type");
 
+// Cấu hình kết nối database
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
 define('DB_PASS', 'H&ptiot2024');
 define('DB_NAME', 'HOPT');
 
+// Kết nối database
 $connUser = new mysqli("localhost", "root", "H&ptiot2024", "user") or die("User DB failed: " . $connUser->connect_error);
 $conn = new mysqli(DB_HOST, DB_USER, DB_PASS, DB_NAME) or die("Connection failed: " . $conn->connect_error);
 $conn->set_charset("utf8");
 
+// Hàm xử lý truy vấn database
 function handleDBQuery($conn, $query, $params = [], $types = '') {
     $stmt = $conn->prepare($query);
     if ($params) $stmt->bind_param($types, ...$params);
@@ -111,12 +115,12 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
         exit;
     }
 
-    if (isset($_GET['id'])) {
+    if (isset($_GET['id']) && !isset($_GET['id_seri'])) {
         if (!is_numeric($_GET['id'])) {
             echo json_encode(["success" => false, "message" => "Invalid ID"]);
             exit;
         }
-        $stmt = $conn->prepare("SELECT STT, id_bao_tri, id_thiet_bi, loai_thiet_bi, khach_hang, vi_tri_lap_dat, DATE_FORMAT(ngay_bat_dau, '%Y-%m-%d') AS ngay_bat_dau, DATE_FORMAT(ngay_hoan_thanh, '%Y-%m-%d') AS ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, DATE_FORMAT(lich_tiep_theo, '%Y-%m-%d') AS lich_tiep_theo, trang_thai, hinh_anh FROM bao_tri_1 WHERE id_thiet_bi = ? ORDER BY ngay_hoan_thanh DESC");
+        $stmt = $conn->prepare("SELECT STT, id_bao_tri, id_thiet_bi, loai_thiet_bi, khach_hang, vi_tri_lap_dat, DATE_FORMAT(ngay_bat_dau, '%Y-%m-%d') AS ngay_bat_dau, DATE_FORMAT(ngay_hoan_thanh, '%Y-%m-%d') AS ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, DATE_FORMAT(lich_tiep_theo, '%Y-%m-%d') AS lich_tiep_theo, trang_thai, hinh_anh, id_seri FROM bao_tri_1 WHERE id_thiet_bi = ? ORDER BY ngay_hoan_thanh DESC");
         $stmt->bind_param("i", $_GET['id']);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -130,12 +134,10 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
     }
 
     if (isset($_GET['all_data'])) {
-        // Get all column names from the table
         $columnsResult = $conn->query("SHOW COLUMNS FROM bao_tri_1");
         $columns = [];
         $dateColumns = ['ngay_bat_dau', 'ngay_hoan_thanh', 'lich_tiep_theo'];
         
-        // Build a dynamic select statement that formats date columns
         $selectParts = [];
         while ($column = $columnsResult->fetch_assoc()) {
             $columnName = $column['Field'];
@@ -161,7 +163,7 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
     }
 
     if (isset($_GET['latest'])) {
-        $result = handleDBQuery($conn, "SELECT STT, id_bao_tri, id_thiet_bi, loai_thiet_bi, khach_hang, vi_tri_lap_dat, DATE_FORMAT(ngay_bat_dau, '%Y-%m-%d') AS ngay_bat_dau, DATE_FORMAT(ngay_hoan_thanh, '%Y-%m-%d') AS ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, DATE_FORMAT(lich_tiep_theo, '%Y-%m-%d') AS lich_tiep_theo, trang_thai, hinh_anh FROM bao_tri_1 ORDER BY ngay_hoan_thanh DESC LIMIT 1");
+        $result = handleDBQuery($conn, "SELECT STT, id_bao_tri, id_thiet_bi, loai_thiet_bi, khach_hang, vi_tri_lap_dat, DATE_FORMAT(ngay_bat_dau, '%Y-%m-%d') AS ngay_bat_dau, DATE_FORMAT(ngay_hoan_thanh, '%Y-%m-%d') AS ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, DATE_FORMAT(lich_tiep_theo, '%Y-%m-%d') AS lich_tiep_theo, trang_thai, hinh_anh, id_seri FROM bao_tri_1 ORDER BY ngay_hoan_thanh DESC LIMIT 1");
         $data = $result->fetch_assoc();
         echo json_encode($data ? ["success" => true, "data" => $data] : ["success" => false, "message" => "No data found"], JSON_UNESCAPED_UNICODE);
         exit;
@@ -171,13 +173,14 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
         $data = json_decode(file_get_contents("php://input"), true);
         if (!$conn->query("SHOW COLUMNS FROM bao_tri_1 LIKE 'khach_hang'")->num_rows) $conn->query("ALTER TABLE bao_tri_1 ADD COLUMN khach_hang VARCHAR(255)");
         if (!$conn->query("SHOW COLUMNS FROM bao_tri_1 LIKE 'vi_tri_lap_dat'")->num_rows) $conn->query("ALTER TABLE bao_tri_1 ADD COLUMN vi_tri_lap_dat VARCHAR(255)");
+        if (!$conn->query("SHOW COLUMNS FROM bao_tri_1 LIKE 'id_seri'")->num_rows) $conn->query("ALTER TABLE bao_tri_1 ADD COLUMN id_seri VARCHAR(255)");
 
         if (isset($data[0]) && is_array($data)) {
             $conn->begin_transaction();
-            $stmt = $conn->prepare("INSERT INTO bao_tri_1 (id_thiet_bi, ngay_bat_dau, ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, lich_tiep_theo, trang_thai, khach_hang, vi_tri_lap_dat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $conn->prepare("INSERT INTO bao_tri_1 (id_thiet_bi, ngay_bat_dau, ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, lich_tiep_theo, trang_thai, khach_hang, vi_tri_lap_dat, id_seri) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $results = ['success' => 0, 'failed' => 0, 'errors' => []];
             foreach ($data as $i => $r) {
-                $stmt->bind_param("isssssssssss", $r['id_thiet_bi'], $r['ngay_bat_dau'], $r['ngay_hoan_thanh'], $r['loai_bao_tri'], $r['nguoi_phu_trach'], $r['mo_ta_cong_viec'], $r['nguyen_nhan_hu_hong'], $r['ket_qua'], $r['lich_tiep_theo'], $r['trang_thai'], $r['khach_hang'], $r['vi_tri_lap_dat']);
+                $stmt->bind_param("issssssssssss", $r['id_thiet_bi'], $r['ngay_bat_dau'], $r['ngay_hoan_thanh'], $r['loai_bao_tri'], $r['nguoi_phu_trach'], $r['mo_ta_cong_viec'], $r['nguyen_nhan_hu_hong'], $r['ket_qua'], $r['lich_tiep_theo'], $r['trang_thai'], $r['khach_hang'], $r['vi_tri_lap_dat'], $r['id_seri']);
                 $stmt->execute() ? $results['success']++ : $results['failed']++ && $results['errors'][] = "Row " . ($i + 1) . ": " . $stmt->error;
             }
             if ($results['failed']) {
@@ -191,8 +194,8 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
             exit;
         }
 
-        $stmt = $conn->prepare("INSERT INTO bao_tri_1 (id_thiet_bi, ngay_bat_dau, ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, lich_tiep_theo, trang_thai, khach_hang, vi_tri_lap_dat) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("isssssssssss", $data['id_thiet_bi'], $data['ngay_bat_dau'], $data['ngay_hoan_thanh'], $data['loai_bao_tri'], $data['nguoi_phu_trach'], $data['mo_ta_cong_viec'], $data['nguyen_nhan_hu_hong'], $data['ket_qua'], $data['lich_tiep_theo'], $data['trang_thai'], $data['khach_hang'], $data['vi_tri_lap_dat']);
+        $stmt = $conn->prepare("INSERT INTO bao_tri_1 (id_thiet_bi, ngay_bat_dau, ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, lich_tiep_theo, trang_thai, khach_hang, vi_tri_lap_dat, id_seri) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("issssssssssss", $data['id_thiet_bi'], $data['ngay_bat_dau'], $data['ngay_hoan_thanh'], $data['loai_bao_tri'], $data['nguoi_phu_trach'], $data['mo_ta_cong_viec'], $data['nguyen_nhan_hu_hong'], $data['ket_qua'], $data['lich_tiep_theo'], $data['trang_thai'], $data['khach_hang'], $data['vi_tri_lap_dat'], $data['id_seri']);
         echo $stmt->execute() ? json_encode(["success" => true, "message" => "Record added"]) : json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
         $stmt->close();
         exit;
@@ -221,7 +224,8 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
             'ket_qua' => 'TEXT',
             'lich_tiep_theo' => 'DATE',
             'trang_thai' => 'VARCHAR(100)',
-            'hinh_anh' => 'TEXT'
+            'hinh_anh' => 'TEXT',
+            'id_seri' => 'VARCHAR(255)'
         ];
 
         foreach ($standardFields as $field => $type) {
@@ -371,6 +375,7 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
     exit;
 }
 
+// Xử lý dữ liệu cho giao diện chi tiết thiết bị
 $data = [];
 $deviceDetails = [];
 $maintenanceList = [];
@@ -386,7 +391,7 @@ if (isset($_GET['id'])) {
         }
 
         // Lấy thông tin thiết bị (dùng record đầu tiên làm đại diện)
-        $stmt = $conn->prepare("SELECT STT, id_bao_tri, id_thiet_bi, loai_thiet_bi, khach_hang, vi_tri_lap_dat, DATE_FORMAT(ngay_bat_dau, '%Y-%m-%d') AS ngay_bat_dau, DATE_FORMAT(ngay_hoan_thanh, '%Y-%m-%d') AS ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, DATE_FORMAT(lich_tiep_theo, '%Y-%m-%d') AS lich_tiep_theo, trang_thai, hinh_anh FROM bao_tri_1 WHERE id_thiet_bi = ? ORDER BY ngay_hoan_thanh DESC LIMIT 1");
+        $stmt = $conn->prepare("SELECT STT, id_bao_tri, id_thiet_bi, loai_thiet_bi, khach_hang, vi_tri_lap_dat, DATE_FORMAT(ngay_bat_dau, '%Y-%m-%d') AS ngay_bat_dau, DATE_FORMAT(ngay_hoan_thanh, '%Y-%m-%d') AS ngay_hoan_thanh, loai_bao_tri, nguoi_phu_trach, mo_ta_cong_viec, nguyen_nhan_hu_hong, ket_qua, DATE_FORMAT(lich_tiep_theo, '%Y-%m-%d') AS lich_tiep_theo, trang_thai, hinh_anh, id_seri FROM bao_tri_1 WHERE id_thiet_bi = ? ORDER BY ngay_hoan_thanh DESC LIMIT 1");
         $stmt->bind_param("i", $id_thiet_bi);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -406,11 +411,9 @@ if (isset($_GET['id'])) {
             $types .= "s";
         }
         if (!empty($id_seri)) {
-            // Giả định id_seri là một trường mới, bạn cần thêm cột 'id_seri' vào bảng bao_tri_1 nếu chưa có
             $whereClauses[] = "id_seri = ?";
             $params[] = $id_seri;
             $types .= "s";
-            // Thêm cột id_seri nếu chưa tồn tại
             if (!$conn->query("SHOW COLUMNS FROM bao_tri_1 LIKE 'id_seri'")->num_rows) {
                 $conn->query("ALTER TABLE bao_tri_1 ADD COLUMN id_seri VARCHAR(255)");
             }
@@ -425,258 +428,11 @@ if (isset($_GET['id'])) {
             $maintenanceList[] = $row;
         }
         $stmt->close();
+
+        // Chuyển hướng sang file giao diện
+        include 'device_details.php';
     }
 }
-?>
-<!DOCTYPE html>
-<html lang="vi">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Chi tiết bảo trì thiết bị</title>
-<style>
-body {
-font-family: Arial, sans-serif;
-margin: 0;
-padding: 10px;
-background: #f0f2f5;
-color: #333;
-}
-.container {
-width: 100%;
-max-width: 900px;
-margin: 0 auto;
-background: white;
-padding: 15px;
-border-radius: 10px;
-box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-box-sizing: border-box;
-}
-h1 {
-color: #1a73e8;
-text-align: center;
-margin-bottom: 15px;
-font-size: 24px;
-font-weight: 600;
-}
-.device-info {
-background: #e3f2fd;
-padding: 15px;
-border-radius: 8px;
-margin-bottom: 20px;
-border-left: 4px solid #1a73e8;
-}
-.device-info h2 {
-font-size: 18px;
-margin: 0 0 10px;
-color: #1a73e8;
-}
-.device-info p {
-margin: 8px 0;
-font-size: 14px;
-word-break: break-word;
-}
-.history-section {
-margin-top: 20px;
-}
-.history-section h2 {
-font-size: 18px;
-color: #d32f2f;
-border-bottom: 2px solid #d32f2f;
-padding-bottom: 5px;
-margin-bottom: 15px;
-}
-.table-container {
-width: 100%;
-overflow-x: auto;
--webkit-overflow-scrolling: touch;
-margin-bottom: 15px;
-}
-.history-table {
-width: 100%;
-border-collapse: separate;
-border-spacing: 0;
-min-width: 600px; /* Ensures minimum width for scrolling */
-}
-.history-table th, .history-table td {
-padding: 10px;
-text-align: left;
-border-bottom: 1px solid #e0e0e0;
-font-size: 14px;
-word-break: break-word;
-}
-.history-table th {
-background: #f8f9fa;
-font-weight: 600;
-color: #444;
-border-top: 2px solid #d32f2f;
-border-bottom: 2px solid #d32f2f;
-position: sticky;
-top: 0;
-z-index: 1;
-}
-.history-table td {
-background: #fff;
-}
-.history-table tr:hover td {
-background: #f5f5f5;
-transition: background 0.3s;
-}
-.next-maintenance {
-margin-top: 20px;
-padding: 15px;
-background: #e8f5e9;
-border-radius: 8px;
-border-left: 4px solid #2e7d32;
-font-size: 14px;
-font-weight: 500;
-word-break: break-word;
-}
-.home-button {
-display: block;
-width: 80%;
-max-width: 200px;
-margin: 20px auto 0;
-padding: 12px 0;
-background: #1a73e8;
-color: white;
-text-align: center;
-text-decoration: none;
-font-weight: bold;
-border-radius: 5px;
-border: none;
-cursor: pointer;
-box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-transition: background-color 0.3s;
-font-size: 14px;
-}
-.home-button:hover {
-background: #0d47a1;
-}
-.error {
-text-align: center;
-color: #d32f2f;
-padding: 20px;
-background: #fde8e8;
-border-radius: 4px;
-margin-top: 20px;
-font-size: 14px;
-}
-.image-link {
-color: #1a73e8;
-text-decoration: none;
-font-weight: bold;
-}
-.image-link:hover {
-text-decoration: underline;
-}
-/* Responsive adjustments */
-@media (max-width: 768px) {
-h1 {
-font-size: 20px;
-}
-.device-info {
-padding: 12px;
-}
-.device-info h2 {
-font-size: 16px;
-}
-.device-info p {
-font-size: 14px;
-}
-.history-section h2 {
-font-size: 16px;
-}
-.history-table th, .history-table td {
-padding: 8px;
-font-size: 13px;
-}
-}
-@media (max-width: 480px) {
-body {
-padding: 5px;
-}
-.container {
-padding: 10px;
-}
-h1 {
-font-size: 18px;
-margin-bottom: 10px;
-}
-.home-button {
-width: 100%;
-padding: 10px 0;
-}
-}
-</style>
-</head>
-<body>
-<div class="container">
-<?php if (!empty($deviceDetails) || !empty($maintenanceList)): ?>
-<h1>Thông tin bảo trì thiết bị #<?php echo htmlspecialchars($deviceDetails['id_thiet_bi'] ?? $maintenanceList[0]['id_thiet_bi'] ?? ''); ?></h1>
-<div class="device-info">
-<h2>Thông tin thiết bị</h2>
-<p><strong>Thiết bị:</strong> <?php echo htmlspecialchars($deviceDetails['loai_thiet_bi'] ?? 'Máy Nén Khí TB1001'); ?></p>
-<!-- <p><strong>Loại:</strong> <?php echo htmlspecialchars($deviceDetails['loai_thiet_bi'] ?? 'Máy nén khí'); ?></p> -->
-<p><strong>Nhà cung cấp:</strong> <?php echo htmlspecialchars('Karz Storz'); ?></p>
-<p><strong>Tên Khách Hàng:</strong> <?php echo htmlspecialchars($deviceDetails['khach_hang'] ?? 'Bệnh viện Hoàn Mỹ Sài Gòn'); ?></p>
-<!-- <p><strong>Lắp đặt tại:</strong> <?php echo htmlspecialchars($deviceDetails['vi_tri_lap_dat'] ?? ''); ?> (Khu vực: <?php echo htmlspecialchars($khu_vuc); ?>)</p> -->
-<!-- <p><strong>ID Số seri:</strong> <?php echo htmlspecialchars($id_seri ?: 'Không có'); ?></p> -->
-</div>
-<div class="history-section">
-<h2>Lịch sử bảo trì</h2>
-<div class="table-container">
-<table class="history-table">
-<thead>
-<tr>
-<th>ID Số seri</th>
-<th>Khu vực</th>
-<th>Ngày</th>
-<th>Loại</th>
-<th>Nguyên nhân</th>
-<th>Mô tả</th>
-<th>Người phụ trách</th>
-<th>Kết quả</th>
-<th>Hình ảnh</th>
 
-</tr>
-</thead>
-<tbody>
-<?php foreach ($maintenanceList as $record): ?>
-<tr>
-<td><?php echo htmlspecialchars($record['id_seri'] ?? 'Không có'); ?></td>
-<td><?php echo htmlspecialchars($record['vi_tri_lap_dat'] ?? ''); ?></td>
-<td><?php echo htmlspecialchars($record['ngay_hoan_thanh']); ?></td>
-<td><?php echo htmlspecialchars($record['loai_bao_tri']); ?></td>
-<td><?php echo htmlspecialchars($record['nguyen_nhan_hu_hong']); ?></td>
-<td><?php echo htmlspecialchars($record['mo_ta_cong_viec']); ?></td>
-<td><?php echo htmlspecialchars($record['nguoi_phu_trach']); ?></td>
-<td><?php echo htmlspecialchars($record['ket_qua']); ?></td>
-<td>
-<?php if ($record['hinh_anh']): ?>
-<a href="<?php echo htmlspecialchars($record['hinh_anh']); ?>" target="_blank" class="image-link">📎 Xem trước/sau</a>
-<?php else: ?>
-Không có
-<?php endif; ?>
-</td>
-
-</tr>
-<?php endforeach; ?>
-</tbody>
-</table>
-</div>
-</div>
-<div class="next-maintenance">
-<strong>Lịch bảo trì tiếp theo:</strong> <?php echo htmlspecialchars($deviceDetails['lich_tiep_theo'] ?? '15/06/2025'); ?>
-</div>
-<a href="https://baotri.hoangphucthanh.vn/" class="home-button">Về Trang Chủ</a>
-<?php else: ?>
-<div class="error">Không tìm thấy thông tin bảo trì.</div>
-<a href="https://baotri.hoangphucthanh.vn/" class="home-button">Về Trang Chủ</a>
-<?php endif; ?>
-</div>
-</body>
-</html>
-<?php
 $conn->close();
 ?>
