@@ -22,8 +22,11 @@
     "axios": "^0.27.2",
     "chart.js": "^4.4.3",
     "date-fns": "^3.6.0",
+    "file-saver": "^2.0.5",
     "jspdf": "^2.5.2",
     "leaflet": "^1.9.4",
+    "mammoth": "^1.9.0",
+    "pdfjs-dist": "^5.0.375",
     "react": "^17.0.2",
     "react-chartjs-2": "^5.2.0",
     "react-circular-gauge": "^1.1.1",
@@ -38,7 +41,8 @@
     "schema-utils": "^4.3.0",
     "serve": "^13.0.2",
     "web-vitals": "^2.1.4",
-    "webpack-dev-server": "^5.2.0"
+    "webpack-dev-server": "^5.2.0",
+    "xlsx": "^0.18.5"
   },
   "scripts": {
     "start": "react-scripts start",

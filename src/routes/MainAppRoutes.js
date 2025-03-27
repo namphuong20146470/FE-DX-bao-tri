@@ -6,8 +6,8 @@ import Loading from "../components/common/Loading";
 
 const Home = lazy(() => import("../components/Home/Home"));
 // const Home = lazy(() => import("../components/home/Home"));
-const Room = lazy(() => import("../components/room/Rooms"));
-const DetailRoom = lazy(() => import("../components/room/detailRoom/DetailRoom"));
+const Room = lazy(() => import("../components/BaoTriTable/BaoTriTable"));
+// const DetailRoom = lazy(() => import("../components/room/detailRoom/DetailRoom"));
 const Profile = lazy(() => import("../components/profile/Profile"));
 const LineChart = lazy(() => import("../components/Chart/LineChart"));
 const Map = lazy(() => import("../components/Map/Map"));
@@ -24,7 +24,7 @@ function MainAppRoutes() {
           <Route path="/home" element={<Home />} />
           {/* Route Room */}
           <Route path="/locations" element={<Room />} />
-          <Route path="/locations/:id" element={<DetailRoom />} />
+      
           {/* Route Map */}
           <Route path="/maps" element={<Map />} />
           {/* Route Profile */}

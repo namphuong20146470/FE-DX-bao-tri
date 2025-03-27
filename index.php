@@ -86,7 +86,7 @@ if (isset($_POST['login'])) {
 }
 
 // Xử lý API JSON
-if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METHOD'] === 'POST') {
+if (isset($_GET['all_data']) || isset($_GET['latest']) || isset($_GET['loai_bao_tri']) || isset($_GET['import_bao_tri']) || isset($_GET['edit_bao_tri']) || isset($_GET['delete_bao_tri']) || $_SERVER['REQUEST_METHOD'] === 'POST') {
     header("Content-Type: application/json");
 
     if (isset($_GET['login']) && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -169,7 +169,199 @@ if (isset($_GET['all_data']) || isset($_GET['latest']) || $_SERVER['REQUEST_METH
         exit;
     }
 
-    if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_GET['update']) && !isset($_GET['delete']) && !isset($_GET['add_extended'])) {
+    // API: Lấy toàn bộ dữ liệu từ bảng loai_bao_tri
+    if (isset($_GET['loai_bao_tri'])) {
+        $columnsResult = $conn->query("SHOW COLUMNS FROM loai_bao_tri");
+        $columns = [];
+        $dateColumns = ['ngay_cap_nhat'];
+
+        $selectParts = [];
+        while ($column = $columnsResult->fetch_assoc()) {
+            $columnName = $column['Field'];
+            $columns[] = $columnName;
+
+            if (in_array($columnName, $dateColumns)) {
+                $selectParts[] = "DATE_FORMAT($columnName, '%Y-%m-%d') AS $columnName";
+            } else {
+                $selectParts[] = $columnName;
+            }
+        }
+
+        $selectSql = implode(", ", $selectParts);
+        $result = $conn->query("SELECT $selectSql FROM loai_bao_tri ORDER BY ngay_cap_nhat DESC");
+
+        $data = [];
+        while ($row = $result->fetch_assoc()) {
+            $data[] = $row;
+        }
+
+        echo json_encode(["success" => true, "data" => $data], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // API: Thêm dữ liệu vào bảng loai_bao_tri
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['import_bao_tri'])) {
+        $rawInput = file_get_contents("php://input");
+        $data = json_decode($rawInput, true);
+
+        if (!$data) {
+            echo json_encode(["success" => false, "message" => "Invalid JSON: " . json_last_error_msg()]);
+            exit();
+        }
+
+        // Kiểm tra nếu dữ liệu là mảng (import nhiều bản ghi)
+        if (isset($data[0]) && is_array($data)) {
+            $conn->begin_transaction();
+            $stmt = $conn->prepare("INSERT INTO loai_bao_tri (ma_loai_bao_tri, loai_bao_tri, trang_thai, nguoi_cap_nhat, ngay_cap_nhat, mo_ta) VALUES (?, ?, ?, ?, ?, ?)");
+            $results = ['success' => 0, 'failed' => 0, 'errors' => []];
+
+            foreach ($data as $i => $row) {
+                // Kiểm tra các trường bắt buộc
+                if (!isset($row['ma_loai_bao_tri']) || !isset($row['loai_bao_tri']) || !isset($row['nguoi_cap_nhat'])) {
+                    $results['failed']++;
+                    $results['errors'][] = "Row " . ($i + 1) . ": Missing required fields (ma_loai_bao_tri, loai_bao_tri, nguoi_cap_nhat)";
+                    continue;
+                }
+
+                // Gán giá trị mặc định nếu không có
+                $trang_thai = isset($row['trang_thai']) ? $row['trang_thai'] : 'Hoạt động';
+                $ngay_cap_nhat = isset($row['ngay_cap_nhat']) ? $row['ngay_cap_nhat'] : date('Y-m-d');
+                $mo_ta = isset($row['mo_ta']) ? $row['mo_ta'] : null;
+
+                $stmt->bind_param(
+                    "ssssss",
+                    $row['ma_loai_bao_tri'],
+                    $row['loai_bao_tri'],
+                    $trang_thai,
+                    $row['nguoi_cap_nhat'],
+                    $ngay_cap_nhat,
+                    $mo_ta
+                );
+
+                if ($stmt->execute()) {
+                    $results['success']++;
+                } else {
+                    $results['failed']++;
+                    $results['errors'][] = "Row " . ($i + 1) . ": " . $stmt->error;
+                }
+            }
+
+            if ($results['failed'] > 0) {
+                $conn->rollback();
+                echo json_encode(["success" => false, "message" => "Import failed", "details" => $results]);
+            } else {
+                $conn->commit();
+                echo json_encode(["success" => true, "message" => "Imported " . $results['success'] . " records"]);
+            }
+            $stmt->close();
+            exit;
+        }
+
+        // Import một bản ghi
+        if (!isset($data['ma_loai_bao_tri']) || !isset($data['loai_bao_tri']) || !isset($data['nguoi_cap_nhat'])) {
+            echo json_encode(["success" => false, "message" => "Missing required fields (ma_loai_bao_tri, loai_bao_tri, nguoi_cap_nhat)"]);
+            exit;
+        }
+
+        // Gán giá trị mặc định nếu không có
+        $trang_thai = isset($data['trang_thai']) ? $data['trang_thai'] : 'Hoạt động';
+        $ngay_cap_nhat = isset($data['ngay_cap_nhat']) ? $data['ngay_cap_nhat'] : date('Y-m-d');
+        $mo_ta = isset($data['mo_ta']) ? $data['mo_ta'] : null;
+
+        $stmt = $conn->prepare("INSERT INTO loai_bao_tri (ma_loai_bao_tri, loai_bao_tri, trang_thai, nguoi_cap_nhat, ngay_cap_nhat, mo_ta) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param(
+            "ssssss",
+            $data['ma_loai_bao_tri'],
+            $data['loai_bao_tri'],
+            $trang_thai,
+            $data['nguoi_cap_nhat'],
+            $ngay_cap_nhat,
+            $mo_ta
+        );
+
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Record added", "last_insert_id" => $conn->insert_id]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+        }
+        $stmt->close();
+        exit;
+    }
+
+    // API mới: Chỉnh sửa dữ liệu trong bảng loai_bao_tri
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['edit_bao_tri'])) {
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        if (!$data || !isset($data['id'])) {
+            echo json_encode(["success" => false, "message" => "Invalid data or missing id"]);
+            exit;
+        }
+
+        $id = $data['id'];
+        unset($data['id']); // Loại bỏ id khỏi dữ liệu để không cập nhật vào câu lệnh SQL
+
+        if (empty($data)) {
+            echo json_encode(["success" => false, "message" => "No fields to update"]);
+            exit;
+        }
+
+        // Chuẩn bị câu lệnh UPDATE
+        $fields = [];
+        $values = [];
+        $types = "";
+        foreach ($data as $key => $value) {
+            // Chỉ cho phép cập nhật các trường có trong bảng
+            if (in_array($key, ['ma_loai_bao_tri', 'loai_bao_tri', 'trang_thai', 'nguoi_cap_nhat', 'ngay_cap_nhat', 'mo_ta'])) {
+                $fields[] = "`$key` = ?";
+                $values[] = $value;
+                $types .= "s"; // Tất cả các trường đều được coi là string
+            }
+        }
+
+        if (empty($fields)) {
+            echo json_encode(["success" => false, "message" => "No valid fields to update"]);
+            exit;
+        }
+
+        $values[] = $id;
+        $types .= "i"; // id là kiểu integer
+
+        $sql = "UPDATE loai_bao_tri SET " . implode(", ", $fields) . " WHERE id = ?";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param($types, ...$values);
+
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Record updated successfully"]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+        }
+        $stmt->close();
+        exit;
+    }
+
+    // API mới: Xóa dữ liệu trong bảng loai_bao_tri
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_GET['delete_bao_tri'])) {
+        $data = json_decode(file_get_contents("php://input"), true);
+
+        if (!$data || !isset($data['id'])) {
+            echo json_encode(["success" => false, "message" => "Invalid data or missing id"]);
+            exit;
+        }
+
+        $id = $data['id'];
+        $stmt = $conn->prepare("DELETE FROM loai_bao_tri WHERE id = ?");
+        $stmt->bind_param("i", $id);
+
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Record deleted successfully"]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Error: " . $stmt->error]);
+        }
+        $stmt->close();
+        exit;
+    }
+
+    if ($_SERVER['REQUEST_METHOD'] == 'POST' && !isset($_GET['update']) && !isset($_GET['delete']) && !isset($_GET['add_extended']) && !isset($_GET['import_bao_tri']) && !isset($_GET['edit_bao_tri']) && !isset($_GET['delete_bao_tri'])) {
         $data = json_decode(file_get_contents("php://input"), true);
         if (!$conn->query("SHOW COLUMNS FROM bao_tri_1 LIKE 'khach_hang'")->num_rows) $conn->query("ALTER TABLE bao_tri_1 ADD COLUMN khach_hang VARCHAR(255)");
         if (!$conn->query("SHOW COLUMNS FROM bao_tri_1 LIKE 'vi_tri_lap_dat'")->num_rows) $conn->query("ALTER TABLE bao_tri_1 ADD COLUMN vi_tri_lap_dat VARCHAR(255)");
