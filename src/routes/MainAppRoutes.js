@@ -5,9 +5,9 @@ import LayoutApp from "../components/layout/Layout";
 import Loading from "../components/common/Loading";
 
 const Home = lazy(() => import("../components/Home/Home"));
-// const Home = lazy(() => import("../components/home/Home"));
-const Mainternence = lazy(() => import("../components/BaoTriTable/BaoTriTable"));
-// const DetailRoom = lazy(() => import("../components/room/detailRoom/DetailRoom"));
+// Fix: Use correct file name and component name
+const CatalogProduct = lazy(() => import("../components/Products/catalogProduct"));
+const ProductsDetail = lazy(() => import("../components/Products/productType"));
 const Profile = lazy(() => import("../components/profile/Profile"));
 const LineChart = lazy(() => import("../components/Chart/LineChart"));
 const Suppliers = lazy(() => import("../components/Suppliers/Suppliers"));
@@ -23,12 +23,13 @@ function MainAppRoutes() {
           <Route path="/" element={<Home />} />
           {/* Route Home */}
           <Route path="/home" element={<Home />} />
-          {/* Route Room */}
+          {/* Route Suppliers */}
           <Route path="/suppliers" element={<Suppliers />} />
           <Route path="/suppliers/add" element={<AddSupplier />} />
       
-          <Route path="/bao_tri" element={<Mainternence />} />
-          {/* Routes Suppliers */}
+          {/* Route Products - Fixed component reference */}
+          <Route path="/products" element={<ProductsDetail />} />
+          <Route path="/products/catalogs" element={<CatalogProduct />} />
           
           {/* Route Profile */}
           <Route path="/profile" element={<Profile />} />
