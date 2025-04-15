@@ -24,11 +24,11 @@ function MainAppRoutes() {
           {/* Route Home */}
           <Route path="/home" element={<Home />} />
           {/* Route Room */}
-          <Route path="/bao_tri" element={<Mainternence />} />
-      
-          {/* Routes Suppliers */}
           <Route path="/suppliers" element={<Suppliers />} />
           <Route path="/suppliers/add" element={<AddSupplier />} />
+      
+          <Route path="/bao_tri" element={<Mainternence />} />
+          {/* Routes Suppliers */}
           
           {/* Route Profile */}
           <Route path="/profile" element={<Profile />} />

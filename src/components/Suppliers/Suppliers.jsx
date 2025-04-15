@@ -27,40 +27,43 @@ const SuppliersTable = ({ isNewSuppliers = false }) => {
   const [uploading, setUploading] = useState(false);
 
   // Fetch suppliers data
-  const fetchSuppliers = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('https://192.168.0.252:3000/maintenance/suppliers', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+// ...existing code...
 
-      if (!response.ok) {
-        throw new Error(`Server responded with status: ${response.status}`);
-      }
+const fetchSuppliers = async () => {
+  setLoading(true);
+  try {
+    const response = await fetch('https://192.168.0.252:3000/maintenance/suppliers', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+    });
 
-      const result = await response.json();
-
-      if (Array.isArray(result)) {
-        // Add STT to each record
-        const dataWithSTT = result.map((item, index) => ({
-          ...item,
-          stt: index + 1,
-        }));
-        setData(dataWithSTT);
-        setFilteredData(dataWithSTT);
-      } else {
-        message.error('Lỗi khi tải dữ liệu: Định dạng dữ liệu không hợp lệ');
-      }
-    } catch (error) {
-      console.error('Error fetching suppliers:', error);
-      message.error('Không thể kết nối đến server');
-    } finally {
-      setLoading(false);
+    if (!response.ok) {
+      throw new Error(`Server responded with status: ${response.status}`);
     }
-  };
+
+    // The response has { success, message, data: [ ... ] }
+    const result = await response.json();
+    const dataArray = result?.data || [];
+
+    if (Array.isArray(dataArray)) {
+      const dataWithSTT = dataArray.map((item, index) => ({
+        ...item,
+        stt: index + 1,
+      }));
+      setData(dataWithSTT);
+      setFilteredData(dataWithSTT);
+    } else {
+      message.error('Dữ liệu trả về không đúng định dạng');
+    }
+  } catch (error) {
+    console.error('Error fetching suppliers:', error);
+    message.error('Không thể kết nối đến server');
+  } finally {
+    setLoading(false);
+  }
+};
+
+// ...existing code...
 
   useEffect(() => {
     fetchSuppliers();
@@ -79,24 +82,23 @@ const SuppliersTable = ({ isNewSuppliers = false }) => {
 
   const filterData = (searchValue, year) => {
     let filtered = [...data];
-    
-    // Filter by search text if it exists
+
     if (searchValue) {
       const lowercaseSearch = searchValue.toLowerCase();
-      filtered = filtered.filter(item => 
-        item.ma_nha_cung_cap.toLowerCase().includes(lowercaseSearch) ||
-        item.ten_nha_cung_cap.toLowerCase().includes(lowercaseSearch)
+      filtered = filtered.filter(
+        (item) =>
+          item.ma_nha_cung_cap.toLowerCase().includes(lowercaseSearch) ||
+          item.ten_nha_cung_cap.toLowerCase().includes(lowercaseSearch)
       );
     }
-    
-    // Filter by year if it exists and is valid
+
     if (year && year.length === 4) {
-      filtered = filtered.filter(item => {
+      filtered = filtered.filter((item) => {
         const itemYear = new Date(item.ngay_them_vao).getFullYear().toString();
         return itemYear === year;
       });
     }
-    
+
     setFilteredData(filtered);
   };
 
@@ -132,7 +134,7 @@ const SuppliersTable = ({ isNewSuppliers = false }) => {
     try {
       setUploading(true);
       const reader = new FileReader();
-      
+
       reader.onload = async (e) => {
         try {
           const workbook = XLSX.read(e.target.result, { type: 'array' });
@@ -141,7 +143,7 @@ const SuppliersTable = ({ isNewSuppliers = false }) => {
           const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
           // Transform data to match API requirements
-          const transformedData = jsonData.map(row => ({
+          const transformedData = jsonData.map((row) => ({
             ma_nha_cung_cap: row['Mã Nhà Cung Cấp'] || '',
             ten_nha_cung_cap: row['Tên nhà cung cấp'] || '',
             so_dien_thoai: row['Số điện thoại'] || '',
@@ -152,12 +154,13 @@ const SuppliersTable = ({ isNewSuppliers = false }) => {
             trang_website: row['Trang website'] || '',
             trang_thai: row['Trạng thái'] || '',
             ngay_them_vao: row['Ngày thêm vào'] || new Date().toISOString(),
-            ghi_chu: row['Ghi chú'] || ''
+            ghi_chu: row['Ghi chú'] || '',
           }));
 
           // Send data to API
           const response = await fetch('https://192.168.0.252:3000/maintenance/suppliers', {
             method: 'POST',
+            mode: 'cors',
             headers: {
               'Content-Type': 'application/json',
             },
@@ -186,20 +189,18 @@ const SuppliersTable = ({ isNewSuppliers = false }) => {
       message.error('Lỗi khi nhập file: ' + error.message);
     } finally {
       setUploading(false);
-      // Reset file input
       event.target.value = '';
     }
   };
 
   const handleFileExport = () => {
     try {
-      // Transform data for export
-      const exportData = filteredData.map(item => ({
-        'STT': item.stt,
+      const exportData = filteredData.map((item) => ({
+        STT: item.stt,
         'Mã Nhà Cung Cấp': item.ma_nha_cung_cap,
         'Tên nhà cung cấp': item.ten_nha_cung_cap,
         'Số điện thoại': item.so_dien_thoai,
-        'Email': item.email,
+        Email: item.email,
         'Địa chỉ': item.dia_chi,
         'Quốc gia': item.quoc_gia,
         'Mã số thuế': item.ma_so_thue,
@@ -207,21 +208,16 @@ const SuppliersTable = ({ isNewSuppliers = false }) => {
         'Trạng thái': item.trang_thai,
         'Ngày thêm vào': new Date(item.ngay_them_vao).toLocaleDateString('vi-VN'),
         'Không nợ phải trả': item.tong_no_phai_tra === 0 ? 'Không nợ' : item.tong_no_phai_tra,
-        'Ghi chú': item.ghi_chu
+        'Ghi chú': item.ghi_chu,
       }));
 
-      // Create workbook and worksheet
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(exportData);
-
-      // Add worksheet to workbook
       XLSX.utils.book_append_sheet(wb, ws, 'Suppliers');
 
-      // Generate filename with current date
       const date = new Date().toISOString().split('T')[0];
       const fileName = `danh_sach_nha_cung_cap_${date}.xlsx`;
 
-      // Save file
       XLSX.writeFile(wb, fileName);
       message.success('Xuất file thành công');
     } catch (error) {
@@ -326,10 +322,7 @@ const SuppliersTable = ({ isNewSuppliers = false }) => {
         placeholder="Tìm kiếm theo mã hoặc tên nhà cung cấp"
         value={searchText}
         onChange={(e) => handleSearch(e.target.value)}
-        style={{ 
-          width: 300, 
-          color: '#000000',
-        }}
+        style={{ width: 300, color: '#000000' }}
         className="black-text-input"
         allowClear
         autoFocus
@@ -340,28 +333,22 @@ const SuppliersTable = ({ isNewSuppliers = false }) => {
           }
         }}
       />
-      {/* <Button onClick={() => {}}>
-        Lọc dữ liệu
-      </Button> */}
-      <Input 
-        type="file" 
-        style={{ display: 'none' }} 
-        id="fileInput" 
+      <Input
+        type="file"
+        style={{ display: 'none' }}
+        id="fileInput"
         onChange={handleFileImport}
         accept=".xlsx,.xls"
       />
-      <Button 
-        type="primary" 
+      <Button
+        type="primary"
         onClick={() => document.getElementById('fileInput').click()}
         icon={<UploadOutlined />}
         loading={uploading}
       >
         Nhập File
       </Button>
-      <Button 
-        onClick={handleFileExport}
-        icon={<DownloadOutlined />}
-      >
+      <Button onClick={handleFileExport} icon={<DownloadOutlined />}>
         Xuất File
       </Button>
     </Space>
@@ -391,10 +378,12 @@ const SuppliersTable = ({ isNewSuppliers = false }) => {
               margin: 0,
               fontSize: '16px',
               fontWeight: 500,
-              color: '#000000'
+              color: '#000000',
             }}
           >
-            {isNewSuppliers ? 'Danh sách nhà cung cấp mới trong năm' : 'Danh sách nhà cung cấp'}
+            {isNewSuppliers
+              ? 'Danh sách nhà cung cấp mới trong năm'
+              : 'Danh sách nhà cung cấp'}
           </h2>
           <Space>
             <span style={{ color: '#000000' }}>Chọn năm:</span>
@@ -436,7 +425,7 @@ const SuppliersTable = ({ isNewSuppliers = false }) => {
 
         {/* Edit Modal */}
         <Modal
-          visible={editModalVisible}
+          open={editModalVisible}
           onCancel={() => setEditModalVisible(false)}
           footer={null}
           width={1000}

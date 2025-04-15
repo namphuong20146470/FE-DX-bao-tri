@@ -59,11 +59,7 @@ function LayoutApp(props) {
             <Menu.Item key="/" icon={<HomeOutlined style={{ color: '#fff' }} />}>
               <NavLink to="/" style={{ color: '#fff' }}>Trang Chủ</NavLink>
             </Menu.Item>
-            <Menu.Item key="/bao_tri" icon={<FileOutlined style={{ color: '#fff' }} />}>
-              <NavLink to="/bao_tri" style={{ color: '#fff' }}>Loại bảo trì</NavLink>
-            </Menu.Item>
-            
-            {/* Submenu Nhà Cung Cấp */}
+{/* Submenu Nhà Cung Cấp */}
             <SubMenu 
               key="suppliers" 
               icon={<DesktopOutlined style={{ color: '#fff' }} />}
@@ -77,6 +73,13 @@ function LayoutApp(props) {
                 <NavLink to="/suppliers/add" style={{ color: '#000' }}>Thêm nhà cung cấp mới</NavLink>
               </Menu.Item>
             </SubMenu>
+
+            {/* {Bao tri} */}
+            <Menu.Item key="/bao_tri" icon={<FileOutlined style={{ color: '#fff' }} />}>
+              <NavLink to="/bao_tri" style={{ color: '#fff' }}>Loại bảo trì</NavLink>
+            </Menu.Item>
+            
+            
 
             <Menu.Item key="/meter_powers" icon={<FlashAuto style={{ color: '#fff' }} />}>
               <NavLink to="/statistic" style={{ color: '#fff' }}>Bảo trì</NavLink>
