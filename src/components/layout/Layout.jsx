@@ -59,20 +59,33 @@ function LayoutApp(props) {
             <Menu.Item key="/" icon={<HomeOutlined style={{ color: '#fff' }} />}>
               <NavLink to="/" style={{ color: '#fff' }}>Trang Chủ</NavLink>
             </Menu.Item>
-            <Menu.Item key="/rooms" icon={<FileOutlined style={{ color: '#fff' }} />}>
-              <NavLink to="/locations" style={{ color: '#fff' }}>Loại bảo trì</NavLink>
+            <Menu.Item key="/bao_tri" icon={<FileOutlined style={{ color: '#fff' }} />}>
+              <NavLink to="/bao_tri" style={{ color: '#fff' }}>Loại bảo trì</NavLink>
             </Menu.Item>
-            <Menu.Item key="/devices" icon={<DesktopOutlined style={{ color: '#fff' }} />}>
-              <NavLink to="/maps" style={{ color: '#fff' }}>Sửa chữa</NavLink>
-            </Menu.Item>
+            
+            {/* Submenu Nhà Cung Cấp */}
+            <SubMenu 
+              key="suppliers" 
+              icon={<DesktopOutlined style={{ color: '#fff' }} />}
+              title={<span style={{ color: '#fff' }}>Nhà Cung Cấp</span>}
+              onTitleClick={() => navigation('/suppliers')}
+            >
+              <Menu.Item key="/suppliers/list">
+                <NavLink to="/suppliers" style={{ color: '#000' }}>Danh sách nhà cung cấp</NavLink>
+              </Menu.Item>
+              <Menu.Item key="/suppliers/add">
+                <NavLink to="/suppliers/add" style={{ color: '#000' }}>Thêm nhà cung cấp mới</NavLink>
+              </Menu.Item>
+            </SubMenu>
+
             <Menu.Item key="/meter_powers" icon={<FlashAuto style={{ color: '#fff' }} />}>
               <NavLink to="/statistic" style={{ color: '#fff' }}>Bảo trì</NavLink>
             </Menu.Item>
             <Menu.Item key="/profile" icon={<UserOutlined style={{ color: '#fff' }} />}>
-              <NavLink to="/profile" style={{ color: '#fff' }}>Bảo hành</NavLink>
+              <NavLink to="/suppliers" style={{ color: '#fff' }}>Nhà Cung Cấp</NavLink>
             </Menu.Item>
-            <Menu.Item key="/explain" icon={<SettingOutlined style={{ color: '#fff' }} />}>
-              <NavLink to="/explain" style={{ color: '#fff' }}>Báo Giá </NavLink>
+            <Menu.Item key="/bao_gia" icon={<SettingOutlined style={{ color: '#fff' }} />}>
+              <NavLink to="/bao_gia" style={{ color: '#fff' }}>Báo Giá </NavLink>
             </Menu.Item>
 
             {/* Nút Log out */}

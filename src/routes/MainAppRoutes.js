@@ -6,11 +6,12 @@ import Loading from "../components/common/Loading";
 
 const Home = lazy(() => import("../components/Home/Home"));
 // const Home = lazy(() => import("../components/home/Home"));
-const Room = lazy(() => import("../components/BaoTriTable/BaoTriTable"));
+const Mainternence = lazy(() => import("../components/BaoTriTable/BaoTriTable"));
 // const DetailRoom = lazy(() => import("../components/room/detailRoom/DetailRoom"));
 const Profile = lazy(() => import("../components/profile/Profile"));
 const LineChart = lazy(() => import("../components/Chart/LineChart"));
-const Map = lazy(() => import("../components/Map/Map"));
+const Suppliers = lazy(() => import("../components/Suppliers/Suppliers"));
+const AddSupplier = lazy(() => import("../components/Suppliers/AddSupplier"));
 const Explain = lazy(() => import("../components/Explain/Explain"));
 
 function MainAppRoutes() {
@@ -23,16 +24,18 @@ function MainAppRoutes() {
           {/* Route Home */}
           <Route path="/home" element={<Home />} />
           {/* Route Room */}
-          <Route path="/locations" element={<Room />} />
+          <Route path="/bao_tri" element={<Mainternence />} />
       
-          {/* Route Map */}
-          <Route path="/maps" element={<Map />} />
+          {/* Routes Suppliers */}
+          <Route path="/suppliers" element={<Suppliers />} />
+          <Route path="/suppliers/add" element={<AddSupplier />} />
+          
           {/* Route Profile */}
           <Route path="/profile" element={<Profile />} />
           {/* Route Statistic */}
           <Route path="/statistic" element={<LineChart />} />
           {/* Route Explain */}
-          <Route path="/explain" element={<Explain />} />
+          <Route path="/bao_gia" element={<Explain />} />
           {/* Route 404 hoặc catch-all (tùy chọn) */}
           <Route path="*" element={<Home />} /> {/* Hoặc redirect đến trang 404 */}
         </Routes>

@@ -1,17 +1,19 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Table, Button, Space, message, Modal, Form } from "antd";
-import { customStyles } from "./styles";
-import { TABLE_COLUMNS } from "./constants";
+import { Table, Button, Space, message, Modal, Form, Select } from "antd";
+import { customStyles } from "../../styles/baoTriStyles";
+import { TABLE_COLUMNS } from "../../constants/baoTriConstants";
 import { 
   fetchMaintenanceTypes, 
   addMaintenanceType,
   updateMaintenanceType,
-  deleteMaintenanceType
-} from "./api";
-import { exportToExcel, parseExcelFile } from "./excelUtils";
-import { importFromExcel } from "./api";
+  deleteMaintenanceType,
+  importFromExcel
+} from "../../services/baoTriService";
+import { exportToExcel, parseExcelFile } from "../../utils/excel/excelUtils";
 import MaintenanceTypeForm from "./MaintenanceTypeForm";
 import ActionButtonGroup from "./ActionButtonGroup";
+
+const { Option } = Select;
 
 const BaoTriTable = () => {
   const [data, setData] = useState([]);
@@ -167,11 +169,16 @@ const BaoTriTable = () => {
   ];
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ 
+      padding: "20px", 
+      maxWidth: "1200px", 
+      margin: "0 auto",
+      backgroundColor: "#fff",
+      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+      borderRadius: "8px"
+    }}>
       {/* Add custom styles */}
       <style>{customStyles}</style>
-
-      <h2 style={{ marginBottom: "20px", color: "#000" }}>Quản Lý Loại Bảo Trì</h2>
 
       {/* Action buttons and search */}
       <ActionButtonGroup
@@ -183,12 +190,50 @@ const BaoTriTable = () => {
         fileInputRef={fileInputRef}
       />
 
-      {/* Data table */}
+      {/* Table header */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: "16px 16px",
+        backgroundColor: "#ffffff",
+        borderBottom: "1px solid #f0f0f0",
+        borderRadius: "8px 8px 0 0",
+        marginTop: "20px"
+      }}>
+        <h2 style={{ 
+          fontSize: "1.2rem",
+          fontWeight: "500",
+          margin: "0", 
+          color: "#000000",
+          textAlign: "left"
+        }}>
+          Danh sách bảo trì thiết bị
+        </h2>
+        <Select
+          placeholder="Chọn năm"
+          style={{ width: 120 }}
+          allowClear
+        >
+          <Option value="">Tất cả</Option>
+          <Option value="2023">2023</Option>
+          <Option value="2024">2024</Option>
+          <Option value="2025">2025</Option>
+          <Option value="2026">2026</Option>
+        </Select>
+      </div>
+
+      {/* Table */}
       <Table
         dataSource={filteredData}
         columns={columnsWithActions}
         rowKey="id"
-        pagination={{ pageSize: 10 }}
+        pagination={{ pageSize: 10, position: ["bottomCenter"] }}
+        bordered
+        style={{ 
+          borderRadius: "0 0 8px 8px",
+          overflow: "hidden" 
+        }}
       />
 
       {/* Add modal */}
@@ -224,4 +269,4 @@ const BaoTriTable = () => {
   );
 };
 
-export default BaoTriTable;
+export default BaoTriTable; 

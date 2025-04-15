@@ -595,6 +595,7 @@ function Home() {
                 py: 3,
                 borderBottom: "1px solid #e0e0e0",
                 fontSize: { xs: "1.25rem", sm: "1.5rem" },
+                textAlign: "right",
               }}
             >
               Danh sách bảo trì thiết bị

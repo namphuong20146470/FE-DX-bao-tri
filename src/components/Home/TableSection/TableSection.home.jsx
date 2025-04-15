@@ -100,7 +100,7 @@ function TableSection({
   variant="h5"
   sx={{
     fontSize: { xs: '1.25rem', sm: '1.5rem' },
-    textAlign: 'center', // Center the text
+    textAlign: 'right', // Center the text
   }}
 >
   Danh sách bảo trì thiết bị

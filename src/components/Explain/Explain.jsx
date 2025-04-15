@@ -1,253 +1,19 @@
 import { useState } from "react";
-import Mammoth from "mammoth";
-import * as XLSX from "xlsx";
 import * as pdfjs from "pdfjs-dist";
-import "./Explain.css"
-// Initialize pdfjs worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+import "./Explain.css";
+import { PDFJS_WORKER_SRC, VERSION_REGEX } from './constants';
+import { filterLatestVersions } from './fileUtils';
+import { processDocxFile, processExcelFile, processPdfFile } from './fileProcessors';
 
-// Renamed component to avoid conflict with the built-in FileReader class
+// Initialize pdfjs worker
+pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_SRC.replace('VERSION', pdfjs.version);
+
+// Main component that handles file reading and display
 export default function FileReaderApp() {
   const [total, setTotal] = useState(0);
   const [files, setFiles] = useState([]);
   const [error, setError] = useState("");
   const [skippedFiles, setSkippedFiles] = useState([]);
-
-  const extractNumberAfterPhrase = (text, phrase) => {
-    const lines = text.split('\n');
-    let found = false;
-    let extractedNumbers = [];
-
-    for (let i = lines.length - 1; i >= 0; i--) {
-      if (found) {
-        const matches = lines[i].match(/\d{1,3}(?:[.,]\d{3})*/g);
-        if (matches) {
-          const number = parseInt(matches[matches.length - 1].replace(/[.,]/g, ''), 10);
-          extractedNumbers.push(number);
-        }
-      }
-      if (lines[i].includes(phrase)) {
-        found = true;
-      }
-    }
-    return extractedNumbers.length > 0 ? extractedNumbers[0] : 0;
-  };
-
-  // Advanced extraction for Excel files - checks for multiple phrases
-  const extractNumbersFromExcel = (data) => {
-    // Convert Excel data to searchable text
-    const text = data.map(row => row.join(' ')).join('\n');
-
-    // First try to find number after "Bằng chữ:"
-    let value = extractNumberAfterPhrase(text, "Bằng chữ:");
-
-    // If no value found, or value is 0, try looking for "total" related phrases
-    if (value === 0) {
-      // Extended list of phrases to check for totals
-      const totalPhrases = [
-        "total", "Total", "TOTAL",
-        "tổng", "Tổng", "TỔNG",
-        "total part", "Total Part", "TOTAL PART",
-        "total price", "Total Price", "TOTAL PRICE",
-        "total amount", "Total Amount", "TOTAL AMOUNT",
-        "TOTAL PRICE PART I + II:",
-        "TOTAL PRICE PART I + II",
-        "TOTAL PRICE PART",
-        "Grand Total", "GRAND TOTAL",
-        "Sum", "SUM",
-        "Tổng cộng", "TỔNG CỘNG",
-        // Adding more Vietnamese phrases
-        "tổng tiền", "Tổng tiền", "TỔNG TIỀN",
-        "tổng giá", "Tổng giá", "TỔNG GIÁ",
-        "TỔNG GIÁ PHẦN I + II:", "Tổng giá phần I + II:",
-        "tổng cộng phần", "Tổng cộng phần", "TỔNG CỘNG PHẦN",
-        "tổng cộng giá", "Tổng cộng giá", "TỔNG CỘNG GIÁ"
-      ];
-
-      for (const phrase of totalPhrases) {
-        const extractedValue = extractNumberAfterPhrase(text, phrase);
-        if (extractedValue > 0) {
-          value = extractedValue;
-          break;
-        }
-      }
-
-      // Also search for cells with "total" and a number in the same row
-      for (const row of data) {
-        if (row && row.length > 1) {
-          const rowText = row.join(' ').toLowerCase();
-          if (rowText.includes('total') || rowText.includes('tổng') ||
-            rowText.includes('part') || rowText.includes('price') ||
-            rowText.includes('amount') || rowText.includes('sum') ||
-            rowText.includes('cộng')) {
-            const matches = rowText.match(/\d{1,3}(?:[.,]\d{3})*/g);
-            if (matches) {
-              const number = parseInt(matches[matches.length - 1].replace(/[.,]/g, ''), 10);
-              if (!isNaN(number) && number > 0) {
-                value = number;
-                break;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    return value;
-  };
-
-  // Extract file version and base name
-  const extractFileInfo = (filename) => {
-    // First, try to match patterns like "16A." or "16B." or "16." at the beginning
-    const versionRegex = /^(\d+)([A-Za-z])?[\s\.](.+)$/;
-    const match = filename.match(versionRegex);
-
-    if (match) {
-      const number = match[1];
-      const version = match[2] ? match[2].toUpperCase() : ''; // Empty string if no letter
-      const restOfName = match[3];
-
-      return {
-        number,
-        version,
-        baseName: `${number}.${restOfName}`, // Base name without version letter
-        fullName: filename
-      };
-    }
-
-    return {
-      number: null,
-      version: null,
-      baseName: filename,
-      fullName: filename
-    };
-  };
-
-  // Filter files to keep only the latest version
-  const filterLatestVersions = (files) => {
-    const fileGroups = {};
-    const latestVersions = [];
-    const skipped = [];
-
-    // Group files by their base number
-    files.forEach(file => {
-      const fileInfo = extractFileInfo(file.name);
-
-      // If we could extract a number
-      if (fileInfo.number !== null) {
-        const key = fileInfo.number;
-
-        if (!fileGroups[key]) {
-          fileGroups[key] = [];
-        }
-
-        fileGroups[key].push({
-          file,
-          version: fileInfo.version,
-          info: fileInfo
-        });
-      } else {
-        // Files that don't match our pattern are always included
-        latestVersions.push(file);
-      }
-    });
-
-    // For each group, find the latest version
-    Object.keys(fileGroups).forEach(key => {
-      const group = fileGroups[key];
-
-      if (group.length > 1) {
-        // FIXED SORTING LOGIC:
-        // 1. Files with version letters are newer than files without
-        // 2. For files with version letters, higher letters come first (C > B > A)
-        group.sort((a, b) => {
-          // If one has a version letter and the other doesn't
-          if (a.version && !b.version) {
-            return -1; // a (with letter) comes first (is newer)
-          }
-          if (!a.version && b.version) {
-            return 1; // b (with letter) comes first (is newer)
-          }
-
-          // If both have version letters, compare them alphabetically
-          if (a.version && b.version) {
-            return b.version.localeCompare(a.version); // Sort in reverse (C > B > A)
-          }
-
-          // If neither has a version letter, maintain original order
-          return 0;
-        });
-
-        // Keep the latest version
-        latestVersions.push(group[0].file);
-
-        // Add others to skipped list
-        for (let i = 1; i < group.length; i++) {
-          skipped.push({
-            name: group[i].file.name,
-            newerVersion: group[0].file.name
-          });
-        }
-      } else if (group.length === 1) {
-        // If there's only one file in the group, keep it
-        latestVersions.push(group[0].file);
-      }
-    });
-
-    return { latestVersions, skipped };
-  };
-
-  // Process DOCX files
-  const processDocxFile = async (file, index) => {
-    return new Promise((resolve, reject) => {
-      const reader = new window.FileReader();
-      reader.onload = async (e) => {
-        try {
-          const arrayBuffer = e.target.result;
-          const result = await Mammoth.extractRawText({ arrayBuffer });
-          const extractedNumber = extractNumberAfterPhrase(result.value, "Bằng chữ:");
-          resolve({ file, value: extractedNumber, index });
-        } catch (err) {
-          reject({ file, error: err.message, index });
-        }
-      };
-      reader.onerror = () => reject({ file, error: "File read error", index });
-      reader.readAsArrayBuffer(file);
-    });
-  };
-
-  // Process Excel files
-  const processExcelFile = async (file, index) => {
-    return new Promise((resolve, reject) => {
-      const reader = new window.FileReader();
-      reader.onload = async (e) => {
-        try {
-          const arrayBuffer = e.target.result;
-          const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-          // Use the enhanced extraction function for Excel
-          const extractedNumber = extractNumbersFromExcel(data);
-          resolve({ file, value: extractedNumber, index });
-        } catch (err) {
-          reject({ file, error: err.message, index });
-        }
-      };
-      reader.onerror = () => reject({ file, error: "File read error", index });
-      reader.readAsArrayBuffer(file);
-    });
-  };
-
-  // Process PDF files
-// Process PDF files (CHỈ BỎ QUA PDF, KHÔNG ĐỌC NỘI DUNG)
-const processPdfFile = async (file, index) => {
-  return new Promise((resolve) => {
-    resolve({ file, value: "Bỏ qua PDF", index });
-  });
-};
-
 
   const handleFileUpload = async (event) => {
     const uploadedFiles = Array.from(event.target.files);
@@ -273,7 +39,7 @@ const processPdfFile = async (file, index) => {
     }
 
     // Filter to keep only the latest versions of each file
-    const { latestVersions, skipped } = filterLatestVersions(validFiles);
+    const { latestVersions, skipped } = filterLatestVersions(validFiles, VERSION_REGEX);
     setSkippedFiles(skipped);
 
     if (skipped.length > 0) {
