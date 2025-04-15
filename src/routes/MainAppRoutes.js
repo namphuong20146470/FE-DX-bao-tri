@@ -6,8 +6,8 @@ import Loading from "../components/common/Loading";
 
 const Home = lazy(() => import("../components/Home/Home"));
 // Fix: Use correct file name and component name
-const CatalogProduct = lazy(() => import("../components/Products/catalogProduct"));
-const ProductsDetail = lazy(() => import("../components/Products/productType"));
+const CatalogProduct = lazy(() => import("../components/Products/catalogProducts/catalogProduct"));
+const ProductsDetail = lazy(() => import("../components/Products/productTypes/productType"));
 const Profile = lazy(() => import("../components/profile/Profile"));
 const LineChart = lazy(() => import("../components/Chart/LineChart"));
 const Suppliers = lazy(() => import("../components/Suppliers/Suppliers"));

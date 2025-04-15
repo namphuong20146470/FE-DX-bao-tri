@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Form, Input, Button, Card, message, Select, DatePicker } from 'antd';
 import { SaveOutlined, RollbackOutlined } from '@ant-design/icons';
-import '../Suppliers/AddSupplier.css'; // Reuse the same CSS
+// import '../Suppliers/AddSupplier.css'; // Reuse the same CSS
 
 const { Option } = Select;
 

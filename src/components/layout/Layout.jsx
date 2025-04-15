@@ -82,7 +82,7 @@ function LayoutApp(props) {
               onTitleClick={() => navigation('/products')}
             >
               <Menu.Item key="/products/list">
-                <NavLink to="/products" style={{ color: '#000' }}>Danh sách hàng hóa</NavLink>
+                <NavLink to="/products" style={{ color: '#000' }}>Loại hàng hóa</NavLink>
               </Menu.Item>
               <Menu.Item key="/products/catalogs">
                 <NavLink to="/products/catalogs" style={{ color: '#000' }}>Danh mục hàng hóa</NavLink>
