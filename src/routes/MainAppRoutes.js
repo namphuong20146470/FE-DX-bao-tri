@@ -10,6 +10,7 @@ const CatalogProduct = lazy(() => import("../components/Products/catalogProducts
 const ProductsDetail = lazy(() => import("../components/Products/productTypes/productType"));
 const Profile = lazy(() => import("../components/profile/Profile"));
 const LineChart = lazy(() => import("../components/Chart/LineChart"));
+const HangHoa = lazy(() => import("../components/HangHoa/LoaiHang/LoaiHang_Table"));
 const Suppliers = lazy(() => import("../components/Suppliers/Suppliers"));
 const AddSupplier = lazy(() => import("../components/Suppliers/AddSupplier"));
 const Explain = lazy(() => import("../components/Explain/Explain"));
@@ -27,9 +28,8 @@ function MainAppRoutes() {
           <Route path="/suppliers" element={<Suppliers />} />
           <Route path="/suppliers/add" element={<AddSupplier />} />
       
-          {/* Route Products - Fixed component reference */}
-          <Route path="/products" element={<ProductsDetail />} />
-          <Route path="/products/catalogs" element={<CatalogProduct />} />
+          <Route path="/bao_tri" element={<Mainternence />} />
+          {/* Routes Suppliers */}
           
           {/* Route Profile */}
           <Route path="/profile" element={<Profile />} />
