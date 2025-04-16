@@ -58,7 +58,8 @@ function LayoutApp(props) {
             <Menu.Item key="/" icon={<HomeOutlined style={{ color: '#fff' }} />}>
               <NavLink to="/" style={{ color: '#fff' }}>Trang Chủ</NavLink>
             </Menu.Item>
-{/* Submenu Nhà Cung Cấp */}
+            
+            {/* Submenu Nhà Cung Cấp */}
             <SubMenu 
               key="suppliers" 
               icon={<DesktopOutlined style={{ color: '#fff' }} />}
@@ -69,23 +70,29 @@ function LayoutApp(props) {
                 <NavLink to="/suppliers" style={{ color: '#000' }}>Danh sách nhà cung cấp</NavLink>
               </Menu.Item>
               <Menu.Item key="/suppliers/add">
-                <NavLink to="/suppliers/add" style={{ color: '#000' }}>Thêm nhà cung cấp mới</NavLink>
+                <NavLink to="/suppliers/add" style={{ color: '#000' }}>Nhà cung cấp mới</NavLink>
               </Menu.Item>
             </SubMenu>
 
-            {/* {Bao tri} */}
-            <Menu.Item key="/loai_hang" icon={<FileOutlined style={{ color: '#fff' }} />}>
-              <NavLink to="/loai_hang" style={{ color: '#fff' }}>Loại hàng</NavLink>
-            </Menu.Item>
+            {/* Submenu Hàng Hóa */}
+            <SubMenu 
+              key="products" 
+              icon={<FileOutlined style={{ color: '#fff' }} />}
+              title={<span style={{ color: '#fff' }}>Hàng Hóa</span>}
+              onTitleClick={() => navigation('/products')}
+            >
+              <Menu.Item key="/product_type">
+                <NavLink to="/product_type" style={{ color: '#000' }}>Loại hàng hóa</NavLink>
+              </Menu.Item>
+              <Menu.Item key="/products">
+                <NavLink to="/products" style={{ color: '#000' }}>Danh mục hàng hóa</NavLink>
+              </Menu.Item>
+              <Menu.Item key="/test_product_type">
+                <NavLink to="/test_product_type" style={{ color: '#000' }}>Tính năng mẫu</NavLink>
+              </Menu.Item>
+            </SubMenu>
 
-            {/* {Bao tri} */}
-            <Menu.Item key="/bao_tri" icon={<FileOutlined style={{ color: '#fff' }} />}>
-              <NavLink to="/bao_tri" style={{ color: '#fff' }}>Loại bảo trì</NavLink>
-            </Menu.Item>
-            
-            
-
-            <Menu.Item key="/meter_powers" icon={<FlashAuto style={{ color: '#fff' }} />}>
+            <Menu.Item key="/statistic" icon={<FlashAuto style={{ color: '#fff' }} />}>
               <NavLink to="/statistic" style={{ color: '#fff' }}>Bảo trì</NavLink>
             </Menu.Item>
             

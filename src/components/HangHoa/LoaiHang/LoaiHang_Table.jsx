@@ -83,7 +83,7 @@ const BangLoaiHang = () => {
       },
       width: "10%"
     },
-    { title: 'Mô tả', dataIndex: 'mo_ta', key: 'mo_ta', width: "25%" },
+    { title: 'Mô tả', dataIndex: 'mo_ta', key: 'mo_ta', width: "28%" },
     {
       title: 'Hành động',
       key: 'hanh_dong',

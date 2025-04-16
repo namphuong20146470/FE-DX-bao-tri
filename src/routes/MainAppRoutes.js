@@ -6,11 +6,11 @@ import Loading from "../components/common/Loading";
 
 const Home = lazy(() => import("../components/Home/Home"));
 // Fix: Use correct file name and component name
-const CatalogProduct = lazy(() => import("../components/Products/catalogProducts/catalogProduct"));
+const HangHoa = lazy(() => import("../components/HangHoa/HangHoa/HangHoa_Table"));
+const LoaiHang = lazy(() => import("../components/HangHoa/LoaiHang/LoaiHang_Table"));
 const ProductsDetail = lazy(() => import("../components/Products/productTypes/productType"));
 const Profile = lazy(() => import("../components/profile/Profile"));
 const LineChart = lazy(() => import("../components/Chart/LineChart"));
-const HangHoa = lazy(() => import("../components/HangHoa/LoaiHang/LoaiHang_Table"));
 const Suppliers = lazy(() => import("../components/Suppliers/Suppliers"));
 const AddSupplier = lazy(() => import("../components/Suppliers/AddSupplier"));
 const Explain = lazy(() => import("../components/Explain/Explain"));
@@ -28,8 +28,10 @@ function MainAppRoutes() {
           <Route path="/suppliers" element={<Suppliers />} />
           <Route path="/suppliers/add" element={<AddSupplier />} />
       
-          <Route path="/bao_tri" element={<Mainternence />} />
-          {/* Routes Suppliers */}
+          {/* Route Products - Fixed component reference */}
+          <Route path="/product_type" element={<LoaiHang />} />
+          <Route path="/products" element={<HangHoa />} />
+          <Route path="/test_product_type" element={<ProductsDetail />} />
           
           {/* Route Profile */}
           <Route path="/profile" element={<Profile />} />
