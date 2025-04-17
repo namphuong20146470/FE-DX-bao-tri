@@ -42,7 +42,8 @@
     "serve": "^13.0.2",
     "web-vitals": "^2.1.4",
     "webpack-dev-server": "^5.2.0",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "xlsx-js-style": "^1.2.0"
   },
 "scripts": {
   "start": "set PORT=443&&set HOST=192.168.0.252&&set HTTPS=true&&set SSL_CRT_FILE=cert/cert.pem&&set SSL_KEY_FILE=cert/key.pem&&react-scripts start",

@@ -66,11 +66,11 @@ function LayoutApp(props) {
               title={<span style={{ color: '#fff' }}>Nhà Cung Cấp</span>}
               onTitleClick={() => navigation('/suppliers')}
             >
-              <Menu.Item key="/suppliers/list">
+              <Menu.Item key="/suppliers">
                 <NavLink to="/suppliers" style={{ color: '#000' }}>Danh sách nhà cung cấp</NavLink>
               </Menu.Item>
               <Menu.Item key="/suppliers/add">
-                <NavLink to="/suppliers/add" style={{ color: '#000' }}>Thêm nhà cung cấp mới</NavLink>
+                <NavLink to="/suppliers/add" style={{ color: '#000' }}>Nhà cung cấp mới</NavLink>
               </Menu.Item>
             </SubMenu>
 
@@ -81,11 +81,14 @@ function LayoutApp(props) {
               title={<span style={{ color: '#fff' }}>Hàng Hóa</span>}
               onTitleClick={() => navigation('/products')}
             >
-              <Menu.Item key="/products/list">
-                <NavLink to="/products" style={{ color: '#000' }}>Loại hàng hóa</NavLink>
+              <Menu.Item key="/product_type">
+                <NavLink to="/product_type" style={{ color: '#000' }}>Loại hàng hóa</NavLink>
               </Menu.Item>
-              <Menu.Item key="/products/catalogs">
-                <NavLink to="/products/catalogs" style={{ color: '#000' }}>Danh mục hàng hóa</NavLink>
+              <Menu.Item key="/products">
+                <NavLink to="/products" style={{ color: '#000' }}>Danh mục hàng hóa</NavLink>
+              </Menu.Item>
+              <Menu.Item key="/test_product_type">
+                <NavLink to="/test_product_type" style={{ color: '#000' }}>Lịch sử hàng hóa</NavLink>
               </Menu.Item>
             </SubMenu>
 

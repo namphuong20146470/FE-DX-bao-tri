@@ -1,0 +1,26 @@
+.bang-loai-hang-wrapper {
+  padding: 24px;
+  background-color: #f4f6f8;
+  min-height: 100vh;
+}
+  
+.bang-loai-hang-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.bang-loai-hang-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.bang-loai-hang-actions .ant-btn {
+  font-size: 14px;
+  height: 32px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+}
+  
