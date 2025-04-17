@@ -1,14 +1,21 @@
-// import axios from 'axios';
-
-// export default axios.create({
-//   baseUrl: 'http://localhost:4000',
-// });
-
 import axios from 'axios';
 
-axios.defaults.baseURL = 'http://localhost:4000';
+// Use the correct base URL for your API
+axios.defaults.baseURL = 'https://192.168.0.252:3000';
 
-const token = localStorage.getItem('token');
-axios.defaults.headers.common['Authorization'] = token;
+// For browser environments, we can't use Node's https module
+const createAxiosInstance = () => {
+  const instance = axios.create({
+    baseURL: 'https://192.168.0.252:3000',
+  });
+  
+  // Get token from localStorage
+  const token = localStorage.getItem('token');
+  if (token) {
+    instance.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  }
+  
+  return instance;
+};
 
-export default axios;
+export default createAxiosInstance();
