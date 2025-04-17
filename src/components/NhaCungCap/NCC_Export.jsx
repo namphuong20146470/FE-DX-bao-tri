@@ -1,8 +1,7 @@
 import * as XLSX from 'xlsx-js-style';
-import { getCountryName } from '../../utils/countryCodes';
 import { formatDate } from '../../utils/format';
 
-const HangHoa_Export = (data, filename = 'HangHoa.xlsx') => {
+const NhaCungCap_Export = (data, filename = 'NhaCungCap.xlsx') => {
   const headers = [
     'STT', 'Mã hàng', 'Tên hàng', 'Loại hàng', 'Nhà cung cấp',
     'Nước xuất xứ', 'Trọng lượng', 'Giá thực', 'Đơn vị',
@@ -15,7 +14,6 @@ const HangHoa_Export = (data, filename = 'HangHoa.xlsx') => {
     'Tên hàng': item.ten_hang,
     'Loại hàng': item.product_type?.ten_loai_hang || '',
     'Nhà cung cấp': item.suppliers?.ten_nha_cung_cap || '',
-    'Nước xuất xứ': getCountryName(item.nuoc_xuat_xu) || '',
     'Trọng lượng': item.trong_luong_tinh,
     'Giá thực': item.gia_thuc,
     'Đơn vị': item.don_vi_ban_hang,
@@ -86,8 +84,8 @@ const HangHoa_Export = (data, filename = 'HangHoa.xlsx') => {
   worksheet['!freeze'] = { xSplit: 0, ySplit: 1 };
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'HangHoa');
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'NhaCungCap');
   XLSX.writeFile(workbook, filename);
 };
 
-export default HangHoa_Export;
+export default NhaCungCap_Export;

@@ -3,31 +3,29 @@ import { Table, Button, Space, message, Input, Select, Pagination } from 'antd';
 import { ImportOutlined, ExportOutlined, PlusOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import '../../utils/css/Custom-Table.css';
 import '../../utils/css/Custom-Button.css';
-import './HangHoa_Table.css';
-import HangHoa_Import from './HangHoa_Import';
-import HangHoa_Export from './HangHoa_Export';
+import '../NhaCungCap/NCC_Table.css';
+import NhaCungCap_Import from '../NhaCungCap/NCC_Import';
+import NhaCungCap_Export from '../NhaCungCap/NCC_Export';
 import { formatDate } from '../../utils/format';
-import { getCountryName } from '../../utils/countryCodes';
-import { filterData, getUniqueValues } from './HangHoa_Filter';
+import { filterData, getUniqueValues } from '../NhaCungCap/NCC_Filter';
 import axios from '../../utils/axiosConfig';
 import PaginationControl from '../../utils/PaginationControl';  // Import component phân trang
 
 const { Option } = Select;
 
-const BangHangHoa = () => {
+const BangNhaCungCap = () => {
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [countryFilter, setCountryFilter] = useState('all');
-    const [supplierFilter, setSupplierFilter] = useState('all');
     const [pageSize, setPageSize] = useState(5);  // State cho số dòng mỗi trang
     const [currentPage, setCurrentPage] = useState(1);  // State cho trang hiện tại
 
-    const fetchProducts = async () => {
+    const fetchSuppliers = async () => {
         setLoading(true);
         try {
-            const res = await axios.get('/products');
+            const res = await axios.get('/suppliers');
             const dataArray = res?.data?.data || [];
             const dataWithNames = dataArray.map((item, index) => ({
                 ...item,
@@ -43,7 +41,7 @@ const BangHangHoa = () => {
     };
 
     useEffect(() => {
-        fetchProducts();
+        fetchSuppliers();
     }, []);
 
     const handleImportedData = (importedData) => {
@@ -59,7 +57,7 @@ const BangHangHoa = () => {
 
     const handleExport = () => {
         try {
-            HangHoa_Export(data);
+            NhaCungCap_Export(data);
         } catch (err) {
             message.error('Xuất file thất bại!');
             console.error(err);
@@ -78,38 +76,34 @@ const BangHangHoa = () => {
         searchTerm,
         statusFilter,
         countryFilter,
-        supplierFilter,
     });
 
-    const uniqueStatus = getUniqueValues(data, (item) => item.tinh_trang_hang_hoa);
-    const uniqueCountries = getUniqueValues(data, (item) => getCountryName(item.nuoc_xuat_xu));
-    const uniqueSuppliers = getUniqueValues(data, (item) => item.suppliers?.ten_nha_cung_cap);
-
+    const uniqueStatus = getUniqueValues(data, (item) => item.trang_thai);
+    const uniqueCountries = getUniqueValues(data, (item) => item.quoc_gia);
+    
     const handlePageChange = (page, pageSize) => {
         setCurrentPage(page);
         setPageSize(pageSize);
     };
 
     const columns = [
-        { title: 'STT', dataIndex: 'stt', key: 'stt', width: "3%" },
-        { title: 'Mã hàng', dataIndex: 'ma_hang', key: 'ma_hang', width: "5%" },
-        { title: 'Tên hàng', dataIndex: 'ten_hang', key: 'ten_hang', width: "15%" },
-        { title: 'Loại hàng', dataIndex: ['product_type', 'ten_loai_hang'], key: 'ten_loai_hang', width: "9%" },
-        { title: 'Nhà cung cấp', dataIndex: ['suppliers', 'ten_nha_cung_cap'], key: 'ten_nha_cung_cap', width: "6%" },
-        { title: 'Nước xuất xứ', dataIndex: 'nuoc_xuat_xu', key: 'nuoc_xuat_xu', render: (code) => getCountryName(code), width: "6%" },
-        { title: 'Trọng lượng', dataIndex: 'trong_luong_tinh', key: 'trong_luong_tinh', width: "5%" },
-        { title: 'Giá thực', dataIndex: 'gia_thuc', key: 'gia_thuc', width: "5%" },
-        { title: 'Đơn vị', dataIndex: 'don_vi_ban_hang', key: 'don_vi_ban_hang', width: "4%" },
-        { title: 'Tình trạng', dataIndex: 'tinh_trang_hang_hoa', key: 'tinh_trang_hang_hoa', width: "5%" },
-        { title: 'Người cập nhật', dataIndex: ['accounts', 'ho_va_ten'], key: 'nguoi_cap_nhat', width: "9%" },
+        { title: 'STT', dataIndex: 'stt', key: 'stt', width: "2%" },
+        { title: 'Mã nhà cung cấp', dataIndex: 'ma_nha_cung_cap', key: 'ma_nha_cung_cap', width: "4%" },
+        { title: 'Tên nhà cung cấp', dataIndex: 'ten_nha_cung_cap', key: 'ten_nha_cung_cap', width: "6%" },
+        { title: 'Số điện thoại', dataIndex: 'so_dien_thoai', key: 'so_dien_thoai', width: "6%" },
+        { title: 'Email', dataIndex: 'email', key: 'email', width: "8%" },
+        { title: 'Địa chỉ', dataIndex: 'dia_chi', key: 'dia_chi', width: "18%" },
+        { title: 'Quốc gia', dataIndex: 'quoc_gia', key: 'quoc_gia', width: "6%" },
+        { title: 'Mã số thuế', dataIndex: 'ma_so_thue', key: 'ma_so_thue', width: "6%" },
+        { title: 'Trang website', dataIndex: 'trang_website', key: 'trang_website', width: "8%" },
+        { title: 'Trạng thái', dataIndex: 'trang_thai', key: 'trang_thai', width: "6%" },
         {
-            title: 'Ngày cập nhật',
-            dataIndex: 'ngay_cap_nhat',
-            key: 'ngay_cap_nhat',
+            title: 'Ngày thêm vào',
+            dataIndex: 'ngay_them_vao',
+            key: 'ngay_them_vao',
             render: (text) => formatDate(text),
-            width: "5%",
+            width: "6%",
         },
-        { title: 'Mô tả', dataIndex: 'mo_ta', key: 'mo_ta', width: "18%" },
         {
             title: 'Hành động',
             key: 'hanh_dong',
@@ -119,14 +113,16 @@ const BangHangHoa = () => {
                     <Button type="primary" danger size="small" onClick={() => handleRemove(record)}>Xóa</Button>
                 </Space>
             ),
-            width: "5%",
+            width: "6%",
         },
+        { title: 'Tổng nợ phải trả', dataIndex: 'tong_no_phai_tra', key: 'tong_no_phai_tra', width: "6%" },
+        { title: 'Ghi chú', dataIndex: 'ghi_chu', key: 'ghi_chu', width: "10%" },
     ];
 
     return (
-        <div className="bang-hang-hoa-container">
+        <div className="bang-nha-cung-cap-container">
             <div className="area-header">
-                <h2 className="custom-title">Danh mục hàng hóa</h2>
+                <h2 className="custom-title">Nhà cung cấp</h2>
                 <div className="button-level1">
                     <Button icon={<ImportOutlined />} onClick={() => document.getElementById('import-excel').click()}>
                         Nhập File
@@ -138,22 +134,22 @@ const BangHangHoa = () => {
                         Thêm mới
                     </Button>
                 </div>
-                <HangHoa_Import onImport={handleImportedData} />
+                <NhaCungCap_Import onImport={handleImportedData} />
             </div>
 
-            <div className="bang-hang-hoa-filters">
+            <div className="bang-nha-cung-cap-filters">
                 <Input
-                    placeholder="Tìm kiếm theo mã, tên hàng hoặc tên loại hàng"
+                    placeholder="Tìm kiếm theo mã hoặc tên nhà cung cấp"
                     prefix={<SearchOutlined />}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
                 <Select
-                    placeholder="Lọc theo tình trạng"
+                    placeholder="Lọc theo trạng thái"
                     value={statusFilter}
                     onChange={(value) => setStatusFilter(value)}
                 >
-                    <Option value="all">Tình trạng</Option>
+                    <Option value="all">Trạng thái</Option>
                     {uniqueStatus.map((status) => (
                         <Option key={status} value={status}>
                             {status}
@@ -161,40 +157,28 @@ const BangHangHoa = () => {
                     ))}
                 </Select>
                 <Select
-                    placeholder="Lọc theo nước xuất xứ"
+                    placeholder="Lọc theo quốc gia"
                     value={countryFilter}
                     onChange={(value) => setCountryFilter(value)}
                 >
-                    <Option value="all">Nước xuất xứ</Option>
+                    <Option value="all">Quốc gia</Option>
                     {uniqueCountries.map((country) => (
                         <Option key={country} value={country}>
                             {country}
                         </Option>
                     ))}
                 </Select>
-                <Select
-                    placeholder="Lọc theo nhà cung cấp"
-                    value={supplierFilter}
-                    onChange={(value) => setSupplierFilter(value)}
-                >
-                    <Option value="all">Nhà cung cấp</Option>
-                    {uniqueSuppliers.map((supplier) => (
-                        <Option key={supplier} value={supplier}>
-                            {supplier}
-                        </Option>
-                    ))}
-                </Select>
-                <Button icon={<ReloadOutlined />} onClick={fetchProducts} loading={loading}>
+                <Button icon={<ReloadOutlined />} onClick={fetchSuppliers} loading={loading}>
                     Làm mới
                 </Button>
             </div>
 
-            <div className="bang-hang-hoa-scroll-wrapper">
-              <div style={{ width: 2050 }}>
+            <div className="bang-nha-cung-cap-scroll-wrapper">
+              <div style={{ width: 1800 }}>
                   <Table
                       columns={columns}
                       dataSource={filteredData.slice((currentPage - 1) * pageSize, currentPage * pageSize)}
-                      rowKey="ma_hang"
+                      rowKey="ma_nha_cung_cap"
                       bordered
                       size="small"
                       pagination={false} // Tắt pagination trong Table
@@ -216,4 +200,4 @@ const BangHangHoa = () => {
     );
 };
 
-export default BangHangHoa;
+export default BangNhaCungCap;

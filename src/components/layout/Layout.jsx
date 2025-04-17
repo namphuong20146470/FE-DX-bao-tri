@@ -66,7 +66,7 @@ function LayoutApp(props) {
               title={<span style={{ color: '#fff' }}>Nhà Cung Cấp</span>}
               onTitleClick={() => navigation('/suppliers')}
             >
-              <Menu.Item key="/suppliers/list">
+              <Menu.Item key="/suppliers">
                 <NavLink to="/suppliers" style={{ color: '#000' }}>Danh sách nhà cung cấp</NavLink>
               </Menu.Item>
               <Menu.Item key="/suppliers/add">
@@ -88,7 +88,7 @@ function LayoutApp(props) {
                 <NavLink to="/products" style={{ color: '#000' }}>Danh mục hàng hóa</NavLink>
               </Menu.Item>
               <Menu.Item key="/test_product_type">
-                <NavLink to="/test_product_type" style={{ color: '#000' }}>Tính năng mẫu</NavLink>
+                <NavLink to="/test_product_type" style={{ color: '#000' }}>Lịch sử hàng hóa</NavLink>
               </Menu.Item>
             </SubMenu>
 

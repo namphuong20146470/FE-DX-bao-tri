@@ -4,73 +4,23 @@
   min-height: 100vh;
 }
   
-.bang-loai-hang-title {
-  color: #333;
+.bang-loai-hang-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
-  font-size: 24px;
-  font-weight: 600;
 }
 
-  /* Tổng thể bảng */
-.bang-loai-hang-table {
-  background-color: #fcfcfc; /* Mềm mắt hơn */
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+.bang-loai-hang-actions {
+  display: flex;
+  gap: 12px;
 }
 
-
-/* Viền giữa các ô trong bảng */
-.bang-loai-hang-table .ant-table-cell {
-  border: 1px solid #aaa; /* Viền ô */
+.bang-loai-hang-actions .ant-btn {
+  font-size: 14px;
+  height: 32px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
 }
-
-/* Header bảng rõ hơn */
-.bang-loai-hang-table .ant-table-thead > tr > th {
-  background-color: #f0f2f5;
-  font-weight: 600;
-  color: #111;
-  text-align: center;
-  border: 1px solid #888; /* Viền header đậm hơn */
-}
-
-/* Dòng dữ liệu có viền rõ */
-.bang-loai-hang-table .ant-table-tbody > tr > td {
-  text-align: center;
-  vertical-align: middle;
-  border: 1px solid #ddd;
-}
-  
-  /* Nút hành động */
-  .bang-loai-hang-table .ant-btn {
-    font-size: 12px;
-    padding: 0 8px;
-    height: 24px;
-  }
-  
-  .bang-loai-hang-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-  
-  .bang-loai-hang-title {
-    font-size: 24px;
-    font-weight: 600;
-    color: #333;
-    margin: 0;
-  }
-  
-  .bang-loai-hang-actions {
-    display: flex;
-    gap: 12px;
-  }
-  
-  .bang-loai-hang-actions .ant-btn {
-    font-size: 14px;
-    height: 32px;
-    padding: 0 12px;
-    display: flex;
-    align-items: center;
-  }
   

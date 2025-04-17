@@ -1,0 +1,129 @@
+/* Thùng chứa chính */
+.bang-nha-cung-cap-wrapper {
+  padding: 30px;
+  background-color: #f4f6f8;
+  min-height: 100vh;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+/* Vùng cuộn ngang */
+.bang-nha-cung-cap-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+/* Các bộ lọc và tìm kiếm */
+.bang-nha-cung-cap-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  align-items: center;  /* Đảm bảo các phần tử căn chỉnh đúng hàng */
+}
+
+/* Input tìm kiếm */
+.bang-nha-cung-cap-filters .ant-input {
+  width: 300px;
+  height: 35px;
+  padding: 0 12px;
+  font-size: 13px;
+  border-radius: 6px;
+  color: #000 !important;           /* 🔥 Màu chữ đen khi nhập */
+  text-align: left;                 /* 🔥 Căn trái nội dung */
+}
+
+.bang-nha-cung-cap-filters .ant-input-affix-wrapper {
+  width: 300px;
+  height: 35px;
+  border-radius: 6px;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;                  /* 🔥 Căn trái */
+}
+
+/* Container Select */
+.bang-nha-cung-cap-filters .ant-select {
+  width: 180px;
+  font-size: 14px;
+}
+
+/* Phần hiển thị đã chọn */
+.bang-nha-cung-cap-filters .ant-select-selector {
+  background-color: #28a745 !important;
+  color: white !important;
+  font-weight: 600; /* Chữ in đậm */
+  height: 35px !important;
+  border-radius: 6px !important;
+  display: flex !important;
+  align-items: left !important;
+  justify-content: center !important;
+  border: none !important;
+  padding: 0 12px !important;
+}
+
+/* Nội dung item đã chọn */
+.bang-nha-cung-cap-filters .ant-select-selection-item {
+  color: white !important;
+  font-weight: 600 !important;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: left;
+  height: 100%;
+}
+
+/* Icon mũi tên trong select */
+.bang-nha-cung-cap-filters .ant-select-arrow {
+  color: white !important;           /* Màu trắng đậm */
+  font-weight: 1000 !important;       /* Đậm hơn */
+  font-size: 14px !important;        /* Tăng kích thước nếu muốn */
+  display: flex;
+}
+
+/* Nút làm mới */
+.bang-nha-cung-cap-filters .ant-btn {
+  background-color: #28a745;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  height: 35px;
+  border-radius: 6px;
+  padding: 0 12px;
+}
+
+/* Nút làm mới khi hover */
+.bang-nha-cung-cap-filters .ant-btn:hover {
+  background-color: #218838;
+}
+
+/* Nút "Thêm mới" và các nút hành động khác */
+.ant-btn-primary {
+  background-color: #28a745;
+  border-radius: 8px;
+  height: 35px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.3s;
+}
+
+.ant-btn-primary:hover {
+  background-color: #218838;
+}
+
+/* Style cho các nút nhập, xuất, thêm */
+.ant-btn {
+  border-radius: 8px;
+  height: 35px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Hiệu ứng hover cho các nút */
+.ant-btn:hover {
+  background-color: #4c92ff;
+}
+
