@@ -76,3 +76,17 @@
     border-radius: 8px !important;
   }
   
+  /* Thay thế các lựa chọn phổ biến */
+.ant-select-selection-item[title="10 / page"]::after {
+  content: "10 / trang" !important;
+}
+.ant-select-selection-item[title="20 / page"]::after {
+  content: "20 / trang" !important;
+}
+.ant-select-selection-item[title="50 / page"]::after {
+  content: "50 / trang" !important;
+}
+.ant-select-selection-item[title="100 / page"]::after {
+  content: "100 / trang" !important;
+}
+

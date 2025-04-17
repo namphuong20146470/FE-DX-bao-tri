@@ -44,7 +44,7 @@
 
 /* Container Select */
 .bang-hang-hoa-filters .ant-select {
-    width: 180px;
+    width: auto;
     font-size: 14px;
 }
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pagination } from 'antd';
 import {
   DoubleLeftOutlined,
@@ -16,20 +16,43 @@ const PaginationControl = ({
   onSizeChange,
 }) => {
   const itemRender = (_, type, originalElement) => {
-    if (type === 'prev') {
-      return <LeftOutlined />;
-    }
-    if (type === 'next') {
-      return <RightOutlined />;
-    }
-    if (type === 'jump-prev') {
-      return <DoubleLeftOutlined />;
-    }
-    if (type === 'jump-next') {
-      return <DoubleRightOutlined />;
-    }
+    if (type === 'prev') return <LeftOutlined />;
+    if (type === 'next') return <RightOutlined />;
+    if (type === 'jump-prev') return <DoubleLeftOutlined />;
+    if (type === 'jump-next') return <DoubleRightOutlined />;
     return originalElement;
   };
+
+  // ✅ Replace "/ page" thành "/ trang"
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      // ✅ Đổi phần hiển thị đã chọn (ô dropdown đã sửa trước)
+      const selectedItems = document.querySelectorAll('.ant-select-selection-item');
+      selectedItems.forEach((item) => {
+        if (item.innerText.includes('/ page')) {
+          const newText = item.innerText.replace('/ page', '/ trang');
+          item.innerText = newText;
+          item.setAttribute('title', newText);
+        }
+      });
+  
+      // ✅ Đổi các mục trong danh sách dropdown
+      const dropdownItems = document.querySelectorAll('.ant-select-item-option-content');
+      dropdownItems.forEach((item) => {
+        if (item.innerText.includes('/ page')) {
+          const newText = item.innerText.replace('/ page', '/ trang');
+          item.innerText = newText;
+        }
+      });
+    });
+  
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
+  
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className="pagination-container">

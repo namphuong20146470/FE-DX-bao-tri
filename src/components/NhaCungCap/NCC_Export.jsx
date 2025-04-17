@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx-js-style';
-import { formatDate } from '../../utils/format';
+import { formatDate } from '../utils/format';
 
 const NhaCungCap_Export = (data, filename = 'NhaCungCap.xlsx') => {
   const headers = [

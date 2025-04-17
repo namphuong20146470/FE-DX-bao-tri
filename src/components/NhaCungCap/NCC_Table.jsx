@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, message, Input, Select, Pagination } from 'antd';
 import { ImportOutlined, ExportOutlined, PlusOutlined, SearchOutlined, ReloadOutlined } from '@ant-design/icons';
-import '../../utils/css/Custom-Table.css';
-import '../../utils/css/Custom-Button.css';
-import '../NhaCungCap/NCC_Table.css';
-import NhaCungCap_Import from '../NhaCungCap/NCC_Import';
-import NhaCungCap_Export from '../NhaCungCap/NCC_Export';
-import { formatDate } from '../../utils/format';
+import '../utils/css/Custom-Table.css';
+import '../utils/css/Custom-Button.css';
+import './NCC_Table.css';
+import NhaCungCap_Import from './NCC_Import';
+import NhaCungCap_Export from './NCC_Export';
+import { formatDate } from '../utils/format';
 import { filterData, getUniqueValues } from '../NhaCungCap/NCC_Filter';
-import axios from '../../utils/axiosConfig';
-import PaginationControl from '../../utils/PaginationControl';  // Import component phân trang
+import axios from '../utils/axiosConfig';
+import PaginationControl from '../utils/PaginationControl';  // Import component phân trang
 
 const { Option } = Select;
 
