@@ -44,13 +44,14 @@
     "webpack-dev-server": "^5.2.0",
     "xlsx": "^0.18.5"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "prettier-watch": "onchange '**/*.js' -- prettier --write {{changed}}"
-  },
+"scripts": {
+  "start": "set PORT=443&&set HOST=192.168.0.252&&set HTTPS=true&&set SSL_CRT_FILE=cert/cert.pem&&set SSL_KEY_FILE=cert/key.pem&&react-scripts start",
+  "start-linux": "PORT=443 HOST=192.168.0.252 HTTPS=true SSL_CRT_FILE=cert/cert.pem SSL_KEY_FILE=cert/key.pem react-scripts start",
+  "build": "react-scripts build",
+  "test": "react-scripts test",
+  "eject": "react-scripts eject",
+  "prettier-watch": "onchange '**/*.js' -- prettier --write {{changed}}"
+},
   "eslintConfig": {
     "extends": [
       "react-app",
